@@ -1,5 +1,6 @@
 import requests
 
+# Gets candidates (album, year, track number) for the track
 def get_track_info(artist, title):
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
@@ -38,8 +39,11 @@ def get_track_info(artist, title):
                     albums.append((album, year, track))
     return list(set(albums))
 
+# Auxilary function to get group_id (used for album art)
 def get_release_group_id(artist, album):
     try:
+        
+        # TODO - Add wanted header
         url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
         response = requests.get(url)
         response.raise_for_status()
@@ -58,6 +62,7 @@ def download_album_artwork(artist, album, filepath):
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front"
     
     try:
+        # TODO - Add wanted header
         response = requests.get(url)
         if response.status_code == 200:
             with open(filepath, 'wb') as file:

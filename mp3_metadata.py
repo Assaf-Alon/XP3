@@ -2,6 +2,9 @@ import re
 from music_api import get_track_info, download_album_artwork
 from constants import IMG_DIR
 from colorama import Fore, Back, Style
+from os import listdir
+from os.path import isfile, join, basename
+import music_tag
 
 def get_user_input(prompt: str, default=None):
     if prompt.endswith(":"):
@@ -19,19 +22,10 @@ def get_user_input(prompt: str, default=None):
 class Song():
     pattern_illegal_chars = "[\^#$\"<>\|\+]"
     strings_to_remove = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"]
-
     
-    
-    def __init__(self, url=None, title=None, channel=None, band=None, song=None):
+    def __init__(self, url="", title="", channel="", band="", song=""):
         # TODO - raise error instead
         assert title or (band and song)
-        
-        self.url = url
-        self.title = title
-        self.channel = channel
-        self.band = band
-        self.song = song
-        self.art_path = None
         
         if band and song and not title:
             self.title = band + " - " + song
@@ -40,6 +34,22 @@ class Song():
         # if self.title and (not self.band or not self.song):
         #     self.band, self.song = self.title.split(" - ")
         
+        # TODO - consider adding "title_verified" or something like that
+        self.url = url
+        self.title = title
+        self.channel = channel
+        self.band = band
+        self.song = song
+        self.art_path = None
+        
+        
+    def __repr__(self):
+        if self.title:
+            return self.title
+        if self.song and self.band:
+            return self.band + " - " + self.song
+        return "Bad song"
+    
     def __str__(self):
         if self.title:
             return self.title
@@ -47,9 +57,11 @@ class Song():
             return self.band + " - " + self.song
         return "Bad song"
     
-    def fix_title(self, warn=True):
+    def fix_title(self, interactive=True):
         
         suggested_title = self.title
+        
+        # TODO - check if can swap band and song (via API calls?)
         
         # Swap colon (:) to hyphen (-)
         if suggested_title.find("-") < 0 and suggested_title.find(":") >= 0:
@@ -75,12 +87,12 @@ class Song():
         suggested_title = suggested_title.strip()
         
         should_update_title = ""
-        if warn and suggested_title != self.title:
+        if interactive and suggested_title != self.title:
             print("\n------------------------------")
             print("About to update title of song.")
             print(f"Original  title: {self.title}")
             print("Suggested title: " + Fore.BLUE + Back.WHITE + suggested_title + Fore.RESET + Back.RESET)
-            should_update_title = input("Should use suggestion? [Y/n]")
+            should_update_title = input("Should use suggestion? [Y/n]")  # TODO - use get_user_input function
         
         if should_update_title == "" or should_update_title.lower() == "y":
             self.title = suggested_title
@@ -89,7 +101,7 @@ class Song():
         self.title = self.title.strip()
         self.band, self.song = self.title.split(" - ")
     
-    def update_album(self, interactive=True):
+    def update_album(self, interactive=True):  # TODO - consider changing to update_album_info or something like that
         artist, title = self.band, self.song
         if not (self.band and self.song):
             artist, title = self.title.split(" - ")
@@ -145,10 +157,98 @@ class Song():
             self.track = albums[album_index - 1][2]
             
         print(f"Album: {self.album}, year: {self.year}, track: {self.track}")
+        # TODO - change all prints to logging
     
     def update_image(self):
         # TODO - raise error
-        assert self.band and self.album and self.title
-        album_artwork_path = IMG_DIR + self.title + ".png"
-        download_album_artwork(self.band, self.album, filepath=album_artwork_path)
-        self.art_path = album_artwork_path
+        assert self.band and (self.album or self.song)  # TODO - standardize this
+        name_for_art = self.album if self.album else self.song
+        album_artwork_path = join(IMG_DIR, f"{self.band} - {name_for_art}.png")
+        
+        if not isfile(album_artwork_path):
+            download_album_artwork(self.band, self.album, filepath=album_artwork_path)
+        
+        # Making sure the file does exist (in case download has failed)
+        if isfile(album_artwork_path):
+            self.art_path = album_artwork_path
+            return
+        
+def convert_to_filename(title):
+    band, song = title.split(" - ")
+    if band.startswith("DECO"):
+        return "DECO*27" + " - " + song
+    return title
+
+def convert_from_filename(title):
+    band, song = title.split(" - ")
+    if band.startswith("DECO"):
+        return "DECO_27" + " - " + song
+    return title
+
+# TODO - use this to load metadata if exists, and process song name (DECO)
+def load_song_from_file(filepath):
+    pass
+
+def update_metadata_from_path(filepath, interactive=True, update_album_artwork=False):
+    filename = basename(filepath)
+    print(filename)
+    assert filename.endswith(".mp3")
+    song_title = convert_to_filename(title=filename[:-4])
+    
+    # TODO - read metadata if exists
+    song = Song(title=song_title)
+    song.fix_title()
+    song.update_album(interactive=interactive)
+    song.update_image()
+    
+    file = music_tag.load_file(filepath) # type: music_tag.id3.Mp3File
+    print(song)
+    file['title']  = song.song
+    file['artist'] = song.band
+    file['albumartist'] = song.band
+    if song.year:
+        file['year'] = song.year
+    if song.album:
+        file['album'] = song.album
+    if song.track:
+        file['tracknumber'] = song.track
+    if update_album_artwork and song.art_path:
+        with open(song.art_path, 'rb') as img:
+            file['artwork'] = img.read()
+    file.save()
+ 
+def update_metadata_from_directory(basepath, interactive=True, update_album_artwork=False):
+    try:
+        mp3_files = [basepath + f for f in listdir(basepath) if isfile(join(basepath, f))]
+    except FileNotFoundError:
+        print(f"Base path {basepath} doesn't exist")
+        exit(1)
+    for file in mp3_files:
+        if file.endswith(".mp3"):
+            update_metadata_from_path(filepath=file, interactive=interactive, update_album_artwork=update_album_artwork)
+ 
+def update_metadata_from_song(base_dir, song: Song):
+    mp3_path = join(base_dir, song.title + ".mp3")
+    # mp3_path = base_dir + "\\" + song.title + ".mp3"
+    file = music_tag.load_file(mp3_path) # type: music_tag.id3.Mp3File
+    
+    artist = song.band
+    if artist.lower().startswith("deco"):
+        artist = "DECO*27"
+    if artist.lower().startswith("p_"):
+        artist = "P*Light"
+    
+    file['title']       = song.song
+    file['artist']      = artist
+    file['year']        = song.year
+    file['album']       = song.album
+    file['albumartist'] = artist
+    file['tracknumber'] = song.track
+    
+    if song.art_path:
+        with open(song.art_path, 'rb') as img:
+            file['artwork'] = img.read()
+    
+    file.save()
+
+    print(f"Updated {song.band} - {song.song}")
