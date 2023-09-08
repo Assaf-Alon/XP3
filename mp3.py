@@ -2,10 +2,15 @@ import pytube
 from moviepy.editor import *
 
 from mp3_metadata import Song, update_metadata_from_song
-from constants import MP3_DIR, MP4_DIR, DEFAULT_PLAYLIST
+from constants import MP3_DIR, MP4_DIR, DEFAULT_PLAYLIST, IS_DEBUG
 
 from os import listdir
 from os.path import isfile, join, basename
+
+import logging
+
+logger = logging.getLogger("XP3")
+logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
 
 def get_playlist_songs(
@@ -16,7 +21,8 @@ def get_playlist_songs(
     update_album: bool = True,
 ):
     playlist = pytube.Playlist(playlist_url)
-    print(f"Number of videos in playlist: {len(playlist.video_urls)}")
+
+    logger.debug(f"Number of videos in playlist: {len(playlist.video_urls)}")
     start_index -= 1
     end_index = min(end_index - 1, len(playlist.video_urls))
 
@@ -58,18 +64,14 @@ def download_XPrimental(
     start_index: int = 0,
     end_index: int = 99999,
     interactive: bool = True,
-    verbose: bool = True,
 ):
     songs = get_playlist_songs(
         playlist_url=playlist_url, start_index=start_index, end_index=end_index
     )
     for song in songs:
-        if verbose:
-            print(f" > Downloading {song.title}, from {song.url}")
+        logger.debug(f" > Downloading {song.title}, from {song.url}")
         filename = download_ytvid(song.url, out_path=MP4_DIR, title=song.title)
-        if verbose:
-            print(f" >> Downloaded {filename}")
+        logger.debug(f" >> Downloaded {filename}")
         convert_mp4_to_mp3(mp4_path=filename)
         update_metadata_from_song(MP3_DIR, song)
-        if verbose:
-            print(f" >> Updated metadata for {filename}")
+        logger.debug(f" >> Updated metadata for {filename}")

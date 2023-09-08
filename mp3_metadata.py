@@ -1,10 +1,14 @@
 import re
 from music_api import get_track_info, download_album_artwork
-from constants import IMG_DIR
+from constants import IMG_DIR, IS_DEBUG
 from colorama import Fore, Back
 from os import listdir
 from os.path import isfile, join, basename
 import music_tag
+import logging
+
+logger = logging.getLogger("XP3")
+logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
 
 def get_user_input(prompt: str, default=None):
@@ -191,7 +195,7 @@ class Song:
             self.year = albums[album_index - 1][1]
             self.track = albums[album_index - 1][2]
 
-        print(f"Album: {self.album}, year: {self.year}, track: {self.track}")
+        logger.debug(f"Album: {self.album}, year: {self.year}, track: {self.track}")
 
     def update_image(self):
         assert self.band and (self.album or self.song)
@@ -230,7 +234,7 @@ def update_metadata_from_path(
     filepath: str, interactive: bool = True, update_album_artwork: bool = False
 ):
     filename = basename(filepath)
-    print(filename)
+    logger.debug(filename)
     assert filename.endswith(".mp3")
     song_title = convert_to_filename(title=filename[:-4])
 
@@ -240,7 +244,6 @@ def update_metadata_from_path(
     song.update_image()
 
     file = music_tag.load_file(filepath)  # type: music_tag.id3.Mp3File
-    print(song)
     file["title"] = song.song
     file["artist"] = song.band
     file["albumartist"] = song.band
@@ -299,4 +302,4 @@ def update_metadata_from_song(base_dir: str, song: Song):
 
     file.save()
 
-    print(f"Updated {song.band} - {song.song}")
+    logger.debug(f"Updated {song.band} - {song.song}")

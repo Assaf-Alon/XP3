@@ -1,6 +1,10 @@
 import requests
 from typing import List
-from constants import EMAIL_ADDRESS
+from constants import EMAIL_ADDRESS, IS_DEBUG
+import logging
+
+logger = logging.getLogger("XP3")
+logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
 
 # Gets candidates (album, year, track number) for the track
@@ -28,13 +32,19 @@ def get_track_info(artist: str, title: str) -> List[(str, int, int)]:
             )
 
             if received_title.lower() != title.lower():
-                # print(f"Skipping because of title mismatch ({title} != {received_title})")
+                logger.debug(
+                    f"Skipping because of title mismatch ({title} != {received_title})"
+                )
                 continue
 
             if received_artist.lower() != artist.lower():
-                # print(f"Skipping because of artist mismatch ({artist} != {received_artist})")
+                logger.debug(
+                    f"Skipping because of artist mismatch ({artist} != {received_artist})"
+                )
                 continue
-            # print(f" !!! Not Skipping. artist: {received_artist}, title: {received_title}")
+            logger.debug(
+                f"Not Skipping. artist: {received_artist}, title: {received_title}"
+            )
             release_list = recording.get("releases", [])
             for release in release_list:
                 if release.get("title"):
@@ -91,8 +101,6 @@ def main():
     print(f'Possible album, year, track for "{artist} - {track}":')
     print(track_info)
     index = int(input("Correct choice: "))
-
-    # print("\n------------------")
 
     groupid = get_release_group_id(artist, track_info[index][0])
     download_album_artwork(groupid, "C:\\Temp\\DOMinion.png")
