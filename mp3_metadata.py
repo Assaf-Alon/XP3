@@ -27,8 +27,6 @@ class Song():
         # TODO - raise error instead
         assert title or (band and song)
         
-        if band and song and not title:
-            self.title = band + " - " + song
         
         # Not updating here in case the title is illegal
         # if self.title and (not self.band or not self.song):
@@ -59,11 +57,14 @@ class Song():
     
     def fix_title(self, interactive=True):
         
+        if self.band and self.song:
+            self.title = self.band + " - " + self.song
+        
         suggested_title = self.title
         
-        # TODO - check if can swap band and song (via API calls?)
         
-        # Swap colon (:) to hyphen (-)
+        
+        # Swap colon (:) with hyphen (-)
         if suggested_title.find("-") < 0 and suggested_title.find(":") >= 0:
             suggested_title = suggested_title.replace(":", "-")
         
@@ -99,7 +100,17 @@ class Song():
         else:
             self.title = input("Enter the name of the title manually: ")
         self.title = self.title.strip()
-        self.band, self.song = self.title.split(" - ")
+        
+        # Propagate fixes to self.song and self.band 
+        if self.title.count(" - ") == 1:
+            self.band, self.song = self.title.split(" - ")
+        elif self.title.count(" - ") >= 1:
+            self.band, *rest = self.title.split(" - ")
+            self.song = " - ".join(rest)
+        else:
+            self.band, self.song = "ERROR", "ERROR"
+        
+        
     
     def update_album(self, interactive=True):  # TODO - consider changing to update_album_info or something like that
         artist, title = self.band, self.song
@@ -115,7 +126,14 @@ class Song():
         # Sort by release year (main), and by length of album (secondary)
         albums.sort(key=lambda a: (a[1], len(a[0])))
         
+        
+        
         if not interactive:
+            if not albums:
+                self.album = None
+                self.year  = 0
+                self.album = None
+                return
             self.album = albums[0][0]
             self.year  = albums[0][1]
             self.track = albums[0][2]
@@ -173,23 +191,23 @@ class Song():
             self.art_path = album_artwork_path
             return
         
-def convert_to_filename(title):
+def convert_to_filename(title: str) -> str:
     band, song = title.split(" - ")
     if band.startswith("DECO"):
         return "DECO*27" + " - " + song
     return title
 
-def convert_from_filename(title):
+def convert_from_filename(title: str) -> str:
     band, song = title.split(" - ")
     if band.startswith("DECO"):
         return "DECO_27" + " - " + song
     return title
 
 # TODO - use this to load metadata if exists, and process song name (DECO)
-def load_song_from_file(filepath):
+def load_song_from_file(filepath) -> Song:
     pass
 
-def update_metadata_from_path(filepath, interactive=True, update_album_artwork=False):
+def update_metadata_from_path(filepath: str, interactive: bool = True, update_album_artwork: bool = False):
     filename = basename(filepath)
     print(filename)
     assert filename.endswith(".mp3")
@@ -217,7 +235,7 @@ def update_metadata_from_path(filepath, interactive=True, update_album_artwork=F
             file['artwork'] = img.read()
     file.save()
  
-def update_metadata_from_directory(basepath, interactive=True, update_album_artwork=False):
+def update_metadata_from_directory(basepath: str, interactive: bool = True, update_album_artwork: bool = False):
     try:
         mp3_files = [basepath + f for f in listdir(basepath) if isfile(join(basepath, f))]
     except FileNotFoundError:
@@ -227,7 +245,7 @@ def update_metadata_from_directory(basepath, interactive=True, update_album_artw
         if file.endswith(".mp3"):
             update_metadata_from_path(filepath=file, interactive=interactive, update_album_artwork=update_album_artwork)
  
-def update_metadata_from_song(base_dir, song: Song):
+def update_metadata_from_song(base_dir: str, song: Song):
     mp3_path = join(base_dir, song.title + ".mp3")
     # mp3_path = base_dir + "\\" + song.title + ".mp3"
     file = music_tag.load_file(mp3_path) # type: music_tag.id3.Mp3File

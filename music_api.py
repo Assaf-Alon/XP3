@@ -1,13 +1,15 @@
 import requests
+from typing import List, Union
+from constants import EMAIL_ADDRESS
 
 # Gets candidates (album, year, track number) for the track
-def get_track_info(artist, title):
+def get_track_info(artist: str, title: str) -> List[(str, int, int)]:
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
     
     # User-Agent header (because they requested nicely)
     headers = {
-        "User-Agent": "XPrimental/0.0.1 ( your_mail@gmail.com )"
+        f"User-Agent": "XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"
     }
     
     # API request
@@ -40,9 +42,8 @@ def get_track_info(artist, title):
     return list(set(albums))
 
 # Auxilary function to get group_id (used for album art)
-def get_release_group_id(artist, album):
+def get_release_group_id(artist: str, album: str):
     try:
-        
         # TODO - Add wanted header
         url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
         response = requests.get(url)
@@ -57,7 +58,7 @@ def get_release_group_id(artist, album):
         print(f"An error occurred: {e}")
         return None
 
-def download_album_artwork(artist, album, filepath):
+def download_album_artwork(artist: str, album: str, filepath: str):
     release_group_id = get_release_group_id(artist, album)
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front"
     
