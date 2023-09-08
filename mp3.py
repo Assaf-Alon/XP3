@@ -27,7 +27,7 @@ def get_playlist_songs(
         song = Song(py_video.watch_url, py_video.title, py_video.author)
         song.fix_title(interactive=interactive)
         if update_album:
-            song.update_album(interactive=interactive)
+            song.update_album_info(interactive=interactive)
             song.update_image()
         songs.append(song)
 
@@ -49,7 +49,6 @@ def convert_mp4_to_mp3(mp4_path: str):
     assert mp4_path.endswith(".mp4")
     mp4_filename = basename(mp4_path)
     mp3_path = join(MP3_DIR, mp4_filename[:-1] + "3")
-    # mp3_path = MP3_DIR + "\\" + mp4_filename[:-1] + "3" TODO - remove this
     video = VideoFileClip(mp4_path)
     video.audio.write_audiofile(mp3_path)
 

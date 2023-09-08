@@ -26,14 +26,12 @@ class Song:
     strings_to_remove = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"]
 
     def __init__(self, url="", title="", channel="", band="", song=""):
-        # TODO - raise error instead
         assert title or (band and song)
 
         # Not updating here in case the title is illegal
         # if self.title and (not self.band or not self.song):
         #     self.band, self.song = self.title.split(" - ")
 
-        # TODO - consider adding "title_verified" or something like that
         self.url = url
         self.title = title
         self.channel = channel
@@ -105,9 +103,8 @@ class Song:
                 + Fore.RESET
                 + Back.RESET
             )
-            should_update_title = input(
-                "Should use suggestion? [Y/n]"
-            )  # TODO - use get_user_input function
+
+            should_update_title = get_user_input("Should use suggestion?", "Y/n")
 
         if should_update_title == "" or should_update_title.lower() == "y":
             self.title = suggested_title
@@ -124,9 +121,7 @@ class Song:
         else:
             self.band, self.song = "ERROR", "ERROR"
 
-    def update_album(
-        self, interactive=True
-    ):  # TODO - consider changing to update_album_info or something like that
+    def update_album_info(self, interactive=True):
         artist, title = self.band, self.song
         if not (self.band and self.song):
             artist, title = self.title.split(" - ")
@@ -197,11 +192,9 @@ class Song:
             self.track = albums[album_index - 1][2]
 
         print(f"Album: {self.album}, year: {self.year}, track: {self.track}")
-        # TODO - change all prints to logging
 
     def update_image(self):
-        # TODO - raise error
-        assert self.band and (self.album or self.song)  # TODO - standardize this
+        assert self.band and (self.album or self.song)
         name_for_art = self.album if self.album else self.song
         album_artwork_path = join(IMG_DIR, f"{self.band} - {name_for_art}.png")
 
@@ -241,10 +234,9 @@ def update_metadata_from_path(
     assert filename.endswith(".mp3")
     song_title = convert_to_filename(title=filename[:-4])
 
-    # TODO - read metadata if exists
     song = Song(title=song_title)
     song.fix_title()
-    song.update_album(interactive=interactive)
+    song.update_album_info(interactive=interactive)
     song.update_image()
 
     file = music_tag.load_file(filepath)  # type: music_tag.id3.Mp3File

@@ -53,10 +53,10 @@ def get_track_info(artist: str, title: str) -> List[(str, int, int)]:
 
 # Auxilary function to get group_id (used for album art)
 def get_release_group_id(artist: str, album: str):
+    url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
+    headers = {f"User-Agent": "XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
     try:
-        # TODO - Add wanted header
-        url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         response.raise_for_status()
         data = response.json()
         if "releases" in data and data["releases"]:
@@ -72,10 +72,10 @@ def get_release_group_id(artist: str, album: str):
 def download_album_artwork(artist: str, album: str, filepath: str):
     release_group_id = get_release_group_id(artist, album)
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front"
+    headers = {f"User-Agent": "XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     try:
-        # TODO - Add wanted header
-        response = requests.get(url)
+        response = requests.get(url, headers)
         if response.status_code == 200:
             with open(filepath, "wb") as file:
                 file.write(response.content)
