@@ -30,12 +30,13 @@ def get_playlist_songs(
 
     for index in range(start_index, end_index + 1):
         py_video = playlist.videos[index]
-        song = Song(py_video.watch_url, py_video.title, py_video.author)
-        song.fix_title(interactive=interactive)
+        song = Song(
+            title=py_video.title, channel=py_video.author, interactive=interactive
+        )
         if update_album:
             song.update_album_info(interactive=interactive)
             song.update_image()
-        songs.append(song)
+        songs.append((song, py_video.watch_url))
 
     return songs
 
@@ -68,9 +69,9 @@ def download_XPrimental(
     songs = get_playlist_songs(
         playlist_url=playlist_url, start_index=start_index, end_index=end_index
     )
-    for song in songs:
-        logger.debug(f" > Downloading {song.title}, from {song.url}")
-        filename = download_ytvid(song.url, out_path=MP4_DIR, title=song.title)
+    for song, url in songs:
+        logger.debug(f" > Downloading {song.title}, from {url}")
+        filename = download_ytvid(url, out_path=MP4_DIR, title=song.title)
         logger.debug(f" >> Downloaded {filename}")
         convert_mp4_to_mp3(mp4_path=filename)
         update_metadata_from_song(MP3_DIR, song)

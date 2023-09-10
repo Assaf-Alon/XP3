@@ -10,13 +10,21 @@ import logging
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
+pattern_illegal_chars = '[\^#$"<>\|\+]'
+strings_to_remove = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"]
 
-def get_user_input(prompt: str, default=None):
+
+def get_user_input(prompt: str, default: str = None):
     if prompt.endswith(":"):
         prompt = prompt[:-1]
     prompt = prompt.strip()
     if default:
-        prompt = f"{prompt} [{default}]"
+        if str(default).lower() == "y":
+            prompt = f"{prompt} [Y/n]"
+        elif str(default).lower() == "n":
+            prompt = f"{prompt} [y/N]"
+        else:
+            prompt = f"{prompt} [{default}]"
     user_input = input(prompt + ": ")
 
     if not user_input:
@@ -25,23 +33,100 @@ def get_user_input(prompt: str, default=None):
     return user_input
 
 
+def get_title_suggestion(
+    title: str = "", band: str = "", song: str = "", channel="", interactive=False
+):
+    assert (band and song) or title
+
+    if band and song:
+        title = band + " - " + song
+
+    suggested_title = title
+
+    # Swap colon (:) with hyphen (-)
+    if suggested_title.find("-") < 0 and suggested_title.find(":") >= 0:
+        suggested_title = suggested_title.replace(":", "-")
+
+    # Remove illegal characters
+    suggested_title = " ".join(
+        re.sub(pattern_illegal_chars, "", suggested_title).split()
+    ).strip()
+
+    # Remove parentheses (and content)
+    pattern1 = r"\([^)]*\)"
+    pattern2 = r"\[[^]]*\]"
+    suggested_title = " ".join(re.sub(pattern1, "", suggested_title).split()).strip()
+    suggested_title = " ".join(re.sub(pattern2, "", suggested_title).split()).strip()
+
+    # Dash whitespace
+    if suggested_title.find("-") >= 0:
+        pattern3 = r"\s?-\s?"
+        suggested_title = " ".join(
+            re.sub(pattern3, " - ", suggested_title).split()
+        ).strip()
+
+    # Attempt to patch with channel name if possible
+    elif channel:
+        suggested_title = channel + " - " + suggested_title
+
+    for s in strings_to_remove:
+        suggested_title = suggested_title.replace(s, "")
+    suggested_title = suggested_title.strip()
+
+    should_update_title = "Y"
+    if interactive and suggested_title != title:
+        print("\n------------------------------")
+        print("About to update title of song.")
+        print(f"Original  title: {title}")
+        print(
+            "Suggested title: "
+            + Fore.BLUE
+            + Back.WHITE
+            + suggested_title
+            + Fore.RESET
+            + Back.RESET
+        )
+
+        should_update_title = get_user_input("Should use suggestion?", "Y")
+
+    # Don't use suggestion, type manually
+    if should_update_title.lower() != "y":
+        suggested_title = get_user_input("Enter the name of the title manually", title)
+
+    # Update fields
+    title = suggested_title
+    if suggested_title.count(" - ") == 1:
+        band, song = suggested_title.split(" - ")
+    elif suggested_title.count(" - ") >= 1:
+        band, *rest = suggested_title.split(" - ")
+        song = " - ".join(rest)
+    else:
+        band, song = "ERROR", "ERROR"
+
+    band = band.strip()
+    song = song.strip()
+    return band, song
+
+
 class Song:
-    pattern_illegal_chars = '[\^#$"<>\|\+]'
-    strings_to_remove = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"]
-
-    def __init__(self, url="", title="", channel="", band="", song=""):
+    def __init__(self, title="", channel="", band="", song="", interactive=False):
         assert title or (band and song)
-
-        # Not updating here in case the title is illegal
-        # if self.title and (not self.band or not self.song):
-        #     self.band, self.song = self.title.split(" - ")
-
-        self.url = url
-        self.title = title
-        self.channel = channel
-        self.band = band
-        self.song = song
+        self.band, self.song = get_title_suggestion(
+            title, band, song, channel, interactive
+        )
+        self.album = None
+        self.year = None
+        self.track = None
         self.art_path = None
+
+    @property
+    def title(self):
+        return self.band + " - " + self.song
+
+    @title.setter
+    def title(self, value: str):
+        assert value.count(" - ") == 1
+        self.band, self.song = value.split(" - ")
 
     def __repr__(self):
         if self.title:
@@ -57,73 +142,77 @@ class Song:
             return self.band + " - " + self.song
         return "Bad song"
 
-    def fix_title(self, interactive=True):
-        if self.band and self.song:
-            self.title = self.band + " - " + self.song
+    # def fix_title(self, interactive=True):
+    #     if self.band and self.song:
+    #         self.title = self.band + " - " + self.song
 
-        suggested_title = self.title
+    #     suggested_title = self.title
 
-        # Swap colon (:) with hyphen (-)
-        if suggested_title.find("-") < 0 and suggested_title.find(":") >= 0:
-            suggested_title = suggested_title.replace(":", "-")
+    #     # Swap colon (:) with hyphen (-)
+    #     if suggested_title.find("-") < 0 and suggested_title.find(":") >= 0:
+    #         suggested_title = suggested_title.replace(":", "-")
 
-        # Remove illegal characters
-        suggested_title = " ".join(
-            re.sub(self.pattern_illegal_chars, "", suggested_title).split()
-        ).strip()
+    #     # Remove illegal characters
+    #     suggested_title = " ".join(
+    #         re.sub(pattern_illegal_chars, "", suggested_title).split()
+    #     ).strip()
 
-        # Remove parentheses (and content)
-        pattern1 = r"\([^)]*\)"
-        pattern2 = r"\[[^]]*\]"
-        suggested_title = " ".join(
-            re.sub(pattern1, "", suggested_title).split()
-        ).strip()
-        suggested_title = " ".join(
-            re.sub(pattern2, "", suggested_title).split()
-        ).strip()
+    #     # Remove parentheses (and content)
+    #     pattern1 = r"\([^)]*\)"
+    #     pattern2 = r"\[[^]]*\]"
+    #     suggested_title = " ".join(
+    #         re.sub(pattern1, "", suggested_title).split()
+    #     ).strip()
+    #     suggested_title = " ".join(
+    #         re.sub(pattern2, "", suggested_title).split()
+    #     ).strip()
 
-        if suggested_title.find("-") >= 0:
-            pattern3 = r"\s?-\s?"
-            suggested_title = " ".join(
-                re.sub(pattern3, " - ", suggested_title).split()
-            ).strip()
-        elif self.channel:
-            suggested_title = self.channel + " - " + suggested_title
+    #     if suggested_title.find("-") >= 0:
+    #         pattern3 = r"\s?-\s?"
+    #         suggested_title = " ".join(
+    #             re.sub(pattern3, " - ", suggested_title).split()
+    #         ).strip()
+    #     elif self.channel:
+    #         suggested_title = self.channel + " - " + suggested_title
 
-        for s in self.strings_to_remove:
-            suggested_title = suggested_title.replace(s, "")
-        suggested_title = suggested_title.strip()
+    #     for s in strings_to_remove:
+    #         suggested_title = suggested_title.replace(s, "")
+    #     suggested_title = suggested_title.strip()
 
-        should_update_title = ""
-        if interactive and suggested_title != self.title:
-            print("\n------------------------------")
-            print("About to update title of song.")
-            print(f"Original  title: {self.title}")
-            print(
-                "Suggested title: "
-                + Fore.BLUE
-                + Back.WHITE
-                + suggested_title
-                + Fore.RESET
-                + Back.RESET
-            )
+    #     should_update_title = ""
+    #     if interactive and suggested_title != self.title:
+    #         print("\n------------------------------")
+    #         print("About to update title of song.")
+    #         print(f"Original  title: {self.title}")
+    #         print(
+    #             "Suggested title: "
+    #             + Fore.BLUE
+    #             + Back.WHITE
+    #             + suggested_title
+    #             + Fore.RESET
+    #             + Back.RESET
+    #         )
 
-            should_update_title = get_user_input("Should use suggestion?", "Y/n")
+    #         should_update_title = get_user_input("Should use suggestion?", "Y")
 
-        if should_update_title == "" or should_update_title.lower() == "y":
-            self.title = suggested_title
-        else:
-            self.title = input("Enter the name of the title manually: ")
-        self.title = self.title.strip()
+    #         # Don't use suggestion, type manually
+    #         if should_update_title.lower() != "y":
+    #             suggested_title = get_user_input(
+    #                 "Enter the name of the title manually", self.title
+    #             )
 
-        # Propagate fixes to self.song and self.band
-        if self.title.count(" - ") == 1:
-            self.band, self.song = self.title.split(" - ")
-        elif self.title.count(" - ") >= 1:
-            self.band, *rest = self.title.split(" - ")
-            self.song = " - ".join(rest)
-        else:
-            self.band, self.song = "ERROR", "ERROR"
+    #     # Update fields
+    #     self.title = suggested_title
+    #     if suggested_title.count(" - ") == 1:
+    #         self.band, self.song = suggested_title.split(" - ")
+    #     elif suggested_title.count(" - ") >= 1:
+    #         self.band, *rest = suggested_title.split(" - ")
+    #         self.song = " - ".join(rest)
+    #     else:
+    #         self.band, self.song = "ERROR", "ERROR"
+
+    #     self.band = self.band.strip()
+    #     self.song = self.song.strip()
 
     def update_album_info(self, interactive=True):
         artist, title = self.band, self.song
@@ -239,7 +328,6 @@ def update_metadata_from_path(
     song_title = convert_to_filename(title=filename[:-4])
 
     song = Song(title=song_title)
-    song.fix_title()
     song.update_album_info(interactive=interactive)
     song.update_image()
 

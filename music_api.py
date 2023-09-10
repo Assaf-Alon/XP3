@@ -1,5 +1,5 @@
 import requests
-from typing import List
+from typing import List, Tuple
 from constants import EMAIL_ADDRESS, IS_DEBUG
 import logging
 
@@ -8,7 +8,7 @@ logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
 
 # Gets candidates (album, year, track number) for the track
-def get_track_info(artist: str, title: str) -> List[(str, int, int)]:
+def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
 
