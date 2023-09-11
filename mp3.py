@@ -8,6 +8,7 @@ from os import listdir
 from os.path import isfile, join, basename
 
 import logging
+from typing import Tuple, List
 
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
@@ -19,7 +20,7 @@ def get_playlist_songs(
     end_index: int = 999999,
     interactive: bool = True,
     update_album: bool = True,
-):
+) -> List[Tuple[Song, str]]:
     playlist = pytube.Playlist(playlist_url)
 
     logger.debug(f"Number of videos in playlist: {len(playlist.video_urls)}")

@@ -13,5 +13,7 @@
 [] Check if can swap band and song [Papercut - Linkin Park] (via API calls?)
 
 # Tests
-[] Actual tests that test the metadata update
-
+[V] Test mp4 download
+[V] Test image download
+[] Test mp4 to mp3 convertion
+[] Test the metadata update

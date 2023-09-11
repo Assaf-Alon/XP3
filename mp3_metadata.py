@@ -228,23 +228,24 @@ class Song:
         # Sort by release year (main), and by length of album (secondary)
         albums.sort(key=lambda a: (a[1], len(a[0])))
 
-        if not interactive:
-            if not albums:
-                self.album = None
-                self.year = 0
-                self.album = None
-                return
-            self.album = albums[0][0]
-            self.year = albums[0][1]
-            self.track = albums[0][2]
-            return
-
         suggested_album = -1
         for album_index in range(len(albums)):
             # Year is greater then 0
             if albums[album_index][1] > 0:
                 suggested_album = album_index
                 break
+
+        if not interactive:
+            if not albums:
+                self.album = None
+                self.year = 0
+                self.album = None
+                return
+            suggested_album = max(suggested_album, 0)
+            self.album = albums[suggested_album][0]
+            self.year = albums[suggested_album][1]
+            self.track = albums[suggested_album][2]
+            return
 
         print("--------------------")
         print(f"Choose the correct album for {artist} - {title}:")
