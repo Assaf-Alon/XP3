@@ -273,6 +273,12 @@ class MP3MetaData:
         suggested_album = -1
         for album_index in range(len(albums)):
             # Year is greater then 0
+            if albums[album_index][1] == 0:
+                continue
+            if "hits" in albums[album_index][0].lower():
+                continue
+            if "live" in albums[album_index][0].lower():
+                continue
             if albums[album_index][1] > 0:
                 suggested_album = album_index
                 break
