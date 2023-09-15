@@ -1,7 +1,7 @@
 import pytube
 from moviepy.editor import *
 
-from mp3_metadata import Song, update_metadata_from_song
+from mp3_metadata import MP3MetaData
 from constants import MP3_DIR, MP4_DIR, DEFAULT_PLAYLIST, IS_DEBUG
 
 from os import listdir
@@ -20,7 +20,7 @@ def get_playlist_songs(
     end_index: int = 999999,
     interactive: bool = True,
     update_album: bool = True,
-) -> List[Tuple[Song, str]]:
+) -> List[Tuple[MP3MetaData, str]]:
     playlist = pytube.Playlist(playlist_url)
 
     logger.debug(f"Number of videos in playlist: {len(playlist.video_urls)}")
@@ -31,13 +31,13 @@ def get_playlist_songs(
 
     for index in range(start_index, end_index + 1):
         py_video = playlist.videos[index]
-        song = Song(
+        metadata = MP3MetaData.from_video(
             title=py_video.title, channel=py_video.author, interactive=interactive
         )
         if update_album:
-            song.update_album_info(interactive=interactive)
-            song.update_image()
-        songs.append((song, py_video.watch_url))
+            metadata.update_missing_fields(interactive=interactive)
+            metadata.update_album_art()
+        songs.append((metadata, py_video.watch_url))
 
     return songs
 
@@ -59,6 +59,7 @@ def convert_mp4_to_mp3(mp4_path: str):
     mp3_path = join(MP3_DIR, mp4_filename[:-1] + "3")
     video = VideoFileClip(mp4_path)
     video.audio.write_audiofile(mp3_path)
+    return mp3_path
 
 
 def download_XPrimental(
@@ -70,10 +71,10 @@ def download_XPrimental(
     songs = get_playlist_songs(
         playlist_url=playlist_url, start_index=start_index, end_index=end_index
     )
-    for song, url in songs:
-        logger.debug(f" > Downloading {song.title}, from {url}")
-        filename = download_ytvid(url, out_path=MP4_DIR, title=song.title)
+    for metadata, url in songs:
+        logger.debug(f" > Downloading {metadata.title}, from {url}")
+        filename = download_ytvid(url, out_path=MP4_DIR, title=metadata.title)
         logger.debug(f" >> Downloaded {filename}")
-        convert_mp4_to_mp3(mp4_path=filename)
-        update_metadata_from_song(MP3_DIR, song)
-        logger.debug(f" >> Updated metadata for {filename}")
+        mp3_path = convert_mp4_to_mp3(mp4_path=filename)
+        metadata.apply_on_file(mp3_path)
+        logger.debug(f" >> Updated metadata for {mp3_path}")

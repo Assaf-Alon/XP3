@@ -1,5 +1,5 @@
 import unittest
-from mp3_metadata import Song
+from mp3_metadata import MP3MetaData
 from mp3 import get_playlist_songs, convert_mp4_to_mp3, download_ytvid
 from constants import TMP_DIR
 import hashlib

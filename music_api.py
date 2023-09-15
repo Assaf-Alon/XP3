@@ -81,7 +81,7 @@ def get_release_group_id(artist: str, album: str):
 
 def download_album_artwork(artist: str, album: str, filepath: str):
     release_group_id = get_release_group_id(artist, album)
-    url = f"https://coverartarchive.org/release-group/{release_group_id}/front"
+    url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
     headers = {f"User-Agent": "XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     try:
