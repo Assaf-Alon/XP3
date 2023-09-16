@@ -48,9 +48,8 @@ def download_ytvid(video_url: str, out_path: str = MP4_DIR, title: Optional[str]
     mp4_stream = pytube.YouTube(video_url).streams.filter(file_extension="mp4").first()
     if not mp4_stream:
         logger.error(f"No stream found for {video_url}")
-        return 
+        return
     return mp4_stream.download(output_path=out_path, filename=title)
-
 
 
 def convert_mp4_to_mp3(mp4_path: str) -> Optional[str]:
@@ -79,7 +78,7 @@ def download_XPrimental(
         filename = download_ytvid(url, out_path=MP4_DIR, title=metadata.title)
         if not filename:
             continue
-        
+
         logger.debug(f" >> Downloaded {filename}")
         mp3_path = convert_mp4_to_mp3(mp4_path=filename)
         if not mp3_path:

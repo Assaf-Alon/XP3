@@ -170,6 +170,22 @@ def get_title_from_path(file_path: str) -> str:
     return file_name_no_extension
 
 
+def get_suggested_album(albums: List[Tuple[str, int, int]]) -> int:
+    suggested_album = -1
+    for album_index in range(len(albums)):
+        # Year is greater then 0
+        if albums[album_index][1] == 0:
+            continue
+        if "hits" in albums[album_index][0].lower():
+            continue
+        if "live" in albums[album_index][0].lower():
+            continue
+        if albums[album_index][1] > 0:
+            suggested_album = album_index
+            break
+    return suggested_album
+
+
 class MP3MetaData:
     def __init__(
         self,
@@ -208,7 +224,7 @@ class MP3MetaData:
             track = mp3_file.get("tracknumber").value
             album_art = mp3_file.get("artwork")
             art_configured = bool(album_art)
-        
+
         if not (song and band):
             title = get_title_from_path(file_path)
             song, band = get_title_suggestion(title, interactive=interactive)
@@ -262,7 +278,12 @@ class MP3MetaData:
             if not interactive:
                 return
             should_use_existing_metadata = get_user_input(
-                prompt=f"Metadata already set.\n{self.title}\nalbum = {self.album}\nyear = {self.year}\ntrack = {self.track}\nSkip?",
+                prompt=f"""Metadata already set.
+{self.title}
+album = {self.album}
+year = {self.year}
+track = {self.track}
+Skip?""",
                 default="Y",
             )
 
@@ -273,24 +294,10 @@ class MP3MetaData:
         artist, title = self.band, self.song
         albums = get_track_info(artist, title)
 
-        # if len(albums) == 0:
-        #     return
-
         # Sort by release year (main), and by length of album (secondary)
         albums.sort(key=lambda a: (a[1], len(a[0])))
 
-        suggested_album = -1
-        for album_index in range(len(albums)):
-            # Year is greater then 0
-            if albums[album_index][1] == 0:
-                continue
-            if "hits" in albums[album_index][0].lower():
-                continue
-            if "live" in albums[album_index][0].lower():
-                continue
-            if albums[album_index][1] > 0:
-                suggested_album = album_index
-                break
+        suggested_album = get_suggested_album(albums)
 
         if not interactive:
             if not albums:
@@ -332,7 +339,7 @@ class MP3MetaData:
             return
 
         # For linter
-        assert type(mp3_file) == music_tag.id3.Mp3File
+        assert isinstance(mp3_file, music_tag.id3.Mp3File)
 
         if self.song:
             mp3_file["title"] = self.song

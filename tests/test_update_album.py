@@ -1,6 +1,5 @@
 import unittest
 from mp3_metadata import MP3MetaData
-from constants import MP4_DIR
 import os
 from utils import get_file_md5_hash
 

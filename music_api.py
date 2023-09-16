@@ -11,13 +11,14 @@ if EMAIL_ADDRESS == "your-mail@mail.com":
     print("Please update your mail address in constants.py (MusicBrainz asked to do so)")
     sys.exit(1)
 
+
 # Gets candidates (album, year, track number) for the track
 def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
 
     # User-Agent header (because they requested nicely)
-    headers = {f"User-Agent": "XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
+    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     # API request
     response = requests.get(url, headers=headers)
@@ -68,7 +69,7 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
 # Auxilary function to get group_id (used for album art)
 def get_release_group_id(artist: str, album: str) -> Optional[str]:
     url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
-    headers = {f"User-Agent": "XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
+    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
@@ -86,7 +87,7 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
 def download_album_artwork(artist: str, album: str, filepath: str):
     release_group_id = get_release_group_id(artist, album)
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
-    headers = {f"User-Agent": "XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
+    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     try:
         response = requests.get(url, headers)
