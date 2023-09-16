@@ -1,3 +1,4 @@
+import sys
 import requests
 from typing import List, Tuple
 from constants import EMAIL_ADDRESS, IS_DEBUG
@@ -6,6 +7,9 @@ import logging
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
+if EMAIL_ADDRESS == "your-mail@mail.com":
+    print("Please update your mail address in constants.py (MusicBrainz asked to do so)")
+    sys.exit(1)
 
 # Gets candidates (album, year, track number) for the track
 def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
