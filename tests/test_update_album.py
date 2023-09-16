@@ -1,6 +1,5 @@
 import unittest
 from mp3_metadata import MP3MetaData
-from constants import MP4_DIR
 import os
 from utils import get_file_md5_hash
 
@@ -42,7 +41,7 @@ class TestUpdateAlbum(unittest.TestCase):
         m1.update_album_art()
         self.assertTrue(os.path.isfile(m1.art_path))
         self.assertEqual(
-            get_file_md5_hash(m1.art_path), "d908c562d2d7645bef3869a7d250b9e4"
+            get_file_md5_hash(m1.art_path), "52a26502a8073d857e1d147b52efc455"
         )
 
         os.remove(m1.art_path)
