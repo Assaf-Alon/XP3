@@ -1,20 +1,22 @@
 import re
+from typing import Any, List, Tuple
+
 from music_api import get_track_info, download_album_artwork
 from constants import IMG_DIR, IS_DEBUG
 from colorama import Fore, Back
 from os import listdir
-from os.path import isfile, join, basename, splitext
+from os.path import isfile, join, basename
 import music_tag
 import logging
 
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
-pattern_illegal_chars = '[\^#$"<>\|\+]'
+pattern_illegal_chars = r'[\\/:*?"<>|]'
 strings_to_remove = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"]
 
 
-def get_user_input(prompt: str, default: str = None):
+def get_user_input(prompt: str, default: Any) -> str:
     if prompt.endswith(":"):
         prompt = prompt[:-1]
     prompt = prompt.strip()
@@ -27,7 +29,7 @@ def get_user_input(prompt: str, default: str = None):
             prompt = f"{prompt} [{default}]"
     user_input = input(prompt + ": ")
 
-    if not user_input:
+    if not user_input and default:
         return default
 
     return user_input
@@ -36,7 +38,7 @@ def get_user_input(prompt: str, default: str = None):
 # TODO - Handle DECO here
 def get_title_suggestion(
     title: str = "", band: str = "", song: str = "", channel="", interactive=False
-):
+) -> Tuple[str, str]:
     assert (band and song) or title
 
     if band and song:
@@ -138,15 +140,16 @@ def print_suggestions(albums, artist, title, suggested_album):
         print("--------------------")
 
 
-def choose_album(albums, suggested_album):
+# TODO - TYPE HERE vvvvvvvvvvvvvvvvvvv
+def choose_album(albums: List[Tuple[str, int, int]], suggested_album: int) -> Tuple[str, int, int]:
     album_index = get_user_input(
         "Enter the correct album number", default=suggested_album + 1
     )
     album_index = int(album_index)
     if not albums:
-        albums = [(None, None, None)]
+        albums = [("", 0, 0)]
     if album_index == -1:
-        return ("", "", "")  # No album information needed
+        return ("", 0, 0)  # No album information needed
     elif album_index == 0:
         album = get_user_input("Enter album name", default=albums[suggested_album][0])
         year = get_user_input("Enter album year", default=albums[suggested_album][1])
@@ -155,10 +158,12 @@ def choose_album(albums, suggested_album):
         album = albums[album_index - 1][0]
         year = albums[album_index - 1][1]
         track = albums[album_index - 1][2]
+    year = int(year)
+    track = int(track)
     return (album, year, track)
 
 
-def get_title_from_path(file_path: str):
+def get_title_from_path(file_path: str) -> str:
     file_name = basename(file_path)
     assert file_name.endswith(".mp3")
     file_name_no_extension = file_name[:-4]
@@ -168,14 +173,14 @@ def get_title_from_path(file_path: str):
 class MP3MetaData:
     def __init__(
         self,
-        band,
-        song,
-        album="",
-        year="",
-        track="",
-        genre="",
-        art_path="",
-        art_configured=False,
+        band: str,
+        song: str,
+        album: str = "",
+        year: str = "",
+        track: str = "",
+        genre: str = "",
+        art_path: str = "",
+        art_configured: bool = False,
     ):
         self.band = band
         self.song = song
@@ -189,17 +194,21 @@ class MP3MetaData:
     @classmethod
     def from_file(cls, file_path: str, interactive: bool = False):
         assert file_path.endswith(".mp3")
+        assert isfile(file_path)
 
-        mp3_file = music_tag.load_file(file_path)  # type: music_tag.id3.Mp3File
-        song = mp3_file.get("title").value
-        band = mp3_file.get("artist").value
-        album = mp3_file.get("album").value
-        year = mp3_file.get("year").value
-        track = mp3_file.get("tracknumber").value
-        album_art = mp3_file.get("artwork")
-        art_configured = bool(album_art)
+        mp3_file = music_tag.load_file(file_path)
         album_artwork_path = ""
-
+        if not mp3_file:
+            song, band, album, year, track, album_art, art_configured = "", "", "", "", "", "", False
+        else:
+            song = mp3_file.get("title").value
+            band = mp3_file.get("artist").value
+            album = mp3_file.get("album").value
+            year = mp3_file.get("year").value
+            track = mp3_file.get("tracknumber").value
+            album_art = mp3_file.get("artwork")
+            art_configured = bool(album_art)
+        
         if not (song and band):
             title = get_title_from_path(file_path)
             song, band = get_title_suggestion(title, interactive=interactive)
@@ -236,7 +245,7 @@ class MP3MetaData:
         return cls(band=band, song=song)
 
     @property
-    def title(self):
+    def title(self) -> str:
         return self.band + " - " + self.song
 
     @title.setter
@@ -306,7 +315,7 @@ class MP3MetaData:
         album_artwork_path = join(IMG_DIR, f"{self.band} - {name_for_art}.png")
 
         if not isfile(album_artwork_path):
-            download_album_artwork(self.band, self.album, filepath=album_artwork_path)
+            download_album_artwork(self.band, name_for_art, filepath=album_artwork_path)
 
         # Making sure the file does exist (in case download has failed)
         if isfile(album_artwork_path):
@@ -317,28 +326,35 @@ class MP3MetaData:
             logger.error(f"File not found: {file_path}")
             return
 
-        file = music_tag.load_file(file_path)  # type: music_tag.id3.Mp3File
+        mp3_file = music_tag.load_file(file_path)
+        if not mp3_file:
+            logger.error(f"Failed to load {file_path}")
+            return
+
+        # For linter
+        assert type(mp3_file) == music_tag.id3.Mp3File
+
         if self.song:
-            file["title"] = self.song
+            mp3_file["title"] = self.song
 
         if self.band:
-            file["artist"] = self.band
-            file["albumartist"] = self.band
+            mp3_file["artist"] = self.band
+            mp3_file["albumartist"] = self.band
 
         if self.year:
-            file["year"] = self.year
+            mp3_file["year"] = self.year
 
         if self.album:
-            file["album"] = self.album
+            mp3_file["album"] = self.album
 
         if self.track:
-            file["tracknumber"] = self.track
+            mp3_file["tracknumber"] = self.track
 
         if self.art_path:
             with open(self.art_path, "rb") as img:
-                file["artwork"] = img.read()
+                mp3_file["artwork"] = img.read()
 
-        file.save()
+        mp3_file.save()
 
     def __repr__(self):
         if self.song and self.band:
@@ -372,25 +388,6 @@ def update_metadata_for_directory(
         if update_album_art:
             metadata.update_album_art()
         metadata.apply_on_file(file_path)
-
-
-# def update_metadata_from_directory(
-#     basepath: str, interactive: bool = True, update_album_artwork: bool = False
-# ):
-#     try:
-#         mp3_files = [
-#             basepath + f for f in listdir(basepath) if isfile(join(basepath, f))
-#         ]
-#     except FileNotFoundError:
-#         print(f"Base path {basepath} doesn't exist")
-#         exit(1)
-#     for file in mp3_files:
-#         if file.endswith(".mp3"):
-#             update_metadata_from_path(
-#                 filepath=file,
-#                 interactive=interactive,
-#                 update_album_artwork=update_album_artwork,
-#             )
 
 
 # def update_metadata_from_song(base_dir: str, song: Song):

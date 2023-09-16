@@ -1,6 +1,6 @@
 import sys
 import requests
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from constants import EMAIL_ADDRESS, IS_DEBUG
 import logging
 
@@ -66,7 +66,7 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
 
 
 # Auxilary function to get group_id (used for album art)
-def get_release_group_id(artist: str, album: str):
+def get_release_group_id(artist: str, album: str) -> Optional[str]:
     url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
     headers = {f"User-Agent": "XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
     try:
@@ -106,8 +106,7 @@ def main():
     print(track_info)
     index = int(input("Correct choice: "))
 
-    groupid = get_release_group_id(artist, track_info[index][0])
-    download_album_artwork(groupid, "C:\\Temp\\DOMinion.png")
+    download_album_artwork(artist, track_info[index][0], "C:\\Temp\\DOMinion.png")
 
 
 if __name__ == "__main__":
