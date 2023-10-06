@@ -4,8 +4,9 @@ from typing import List, Optional, Tuple
 import logging
 from decouple import config
 
-EMAIL_ADDRESS = config('EMAIL_ADDRESS', default='your-mail@mail.com')
-IS_DEBUG = config('DEBUG', default=False, cast=bool)
+EMAIL_ADDRESS = str(config('EMAIL_ADDRESS', default='your-mail@mail.com', cast=str))
+TEST_DOWNLOAD_PATH = str(config('TEST_DOWNLOAD_PATH', default='C:\\Temp\\DOMinion.png', cast=str))
+IS_DEBUG = bool(config('DEBUG', default=False, cast=bool))
 
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
@@ -111,7 +112,7 @@ def main():
     print(track_info)
     index = int(input("Correct choice: "))
 
-    download_album_artwork(artist, track_info[index][0], "C:\\Temp\\DOMinion.png")
+    download_album_artwork(artist, track_info[index][0], TEST_DOWNLOAD_PATH)
 
 
 if __name__ == "__main__":
