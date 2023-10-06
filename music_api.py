@@ -110,8 +110,15 @@ def main():
     track_info = get_track_info(artist, track)
     print(f'Possible album, year, track for "{artist} - {track}":')
     print(track_info)
-    index = int(input("Correct choice: "))
-
+    
+    while True:
+        index = input("Correct choice: ")
+        if str.isnumeric(index) and 0 <= int(index) < len(track_info):
+            index = int(index)
+            break
+        else:
+            print('Invalid choice, choose again')
+    
     download_album_artwork(artist, track_info[index][0], TEST_DOWNLOAD_PATH)
 
 
