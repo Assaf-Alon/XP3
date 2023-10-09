@@ -1,6 +1,6 @@
 import unittest
 from mp3 import get_playlist_songs, convert_mp4_to_mp3, download_ytvid
-from constants import TMP_DIR
+from config import TMP_DIR
 import hashlib
 
 import os
@@ -8,9 +8,7 @@ import os
 
 class TestDownloadSong(unittest.TestCase):
     def test_get_playlist_songs1(self):
-        playlist_url = (
-            "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
-        )
+        playlist_url = "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
 
         songs = get_playlist_songs(
             playlist_url=playlist_url,
@@ -30,9 +28,7 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(song.track, 1)
 
     def test_get_playlist_songs2(self):
-        playlist_url = (
-            "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
-        )
+        playlist_url = "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
         songs = get_playlist_songs(
             playlist_url=playlist_url,
             start_index=2,
@@ -51,9 +47,7 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(song.track, 2)
 
     def test_get_playlist_songs3(self):
-        playlist_url = (
-            "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
-        )
+        playlist_url = "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
         songs = get_playlist_songs(
             playlist_url=playlist_url,
             start_index=4,
@@ -80,9 +74,7 @@ class TestDownloadSong(unittest.TestCase):
 
     @unittest.skip("Heavy test")
     def test_download_ytvid1(self):
-        playlist_url = (
-            "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
-        )
+        playlist_url = "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
 
         songs = get_playlist_songs(
             playlist_url=playlist_url,

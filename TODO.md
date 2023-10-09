@@ -25,6 +25,6 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Test mp4 to mp3 convertion  
 - [ ] Test the metadata update  
 
-# Feature Request
+# Feature Requests
 - [ ] Filter out 'Greatest Hits'  
 - [ ] Conflict handling - if ran before and configured (album, track), notify if the current song is also in (album, track)  

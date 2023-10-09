@@ -2,7 +2,7 @@ import pytube
 from moviepy.editor import VideoFileClip
 
 from mp3_metadata import MP3MetaData
-from constants import MP3_DIR, MP4_DIR, DEFAULT_PLAYLIST, IS_DEBUG
+from config import MP3_DIR, MP4_DIR, DEFAULT_PLAYLIST, IS_DEBUG
 
 from os.path import join, basename
 
@@ -20,7 +20,6 @@ def get_playlist_songs(
     interactive: bool = True,
     update_album: bool = True,
 ) -> List[Tuple[MP3MetaData, str]]:
-
     playlist = pytube.Playlist(playlist_url)
 
     logger.debug(f"Number of videos in playlist: {len(playlist.video_urls)}")
@@ -31,9 +30,7 @@ def get_playlist_songs(
     videos = list(playlist.videos)
     for index in range(start_index, end_index + 1):
         py_video = videos[index]
-        metadata = MP3MetaData.from_video(
-            title=py_video.title, channel=py_video.author, interactive=interactive
-        )
+        metadata = MP3MetaData.from_video(title=py_video.title, channel=py_video.author, interactive=interactive)
         if update_album:
             metadata.update_missing_fields(interactive=interactive)
             metadata.update_album_art()
@@ -70,9 +67,7 @@ def download_XPrimental(
     end_index: int = 99999,
     interactive: bool = True,
 ):
-    songs = get_playlist_songs(
-        playlist_url=playlist_url, start_index=start_index, end_index=end_index
-    )
+    songs = get_playlist_songs(playlist_url=playlist_url, start_index=start_index, end_index=end_index)
     for metadata, url in songs:
         logger.debug(f" > Downloading {metadata.title}, from {url}")
         filename = download_ytvid(url, out_path=MP4_DIR, title=metadata.title)

@@ -2,7 +2,7 @@ import re
 from typing import Any, List, Tuple
 
 from music_api import get_track_info, download_album_artwork
-from constants import IMG_DIR, IS_DEBUG
+from config import IMG_DIR, IS_DEBUG
 from colorama import Fore, Back
 from os import listdir
 from os.path import isfile, join, basename
@@ -51,9 +51,7 @@ def get_title_suggestion(
         suggested_title = suggested_title.replace(":", "-")
 
     # Remove illegal characters
-    suggested_title = " ".join(
-        re.sub(pattern_illegal_chars, "", suggested_title).split()
-    ).strip()
+    suggested_title = " ".join(re.sub(pattern_illegal_chars, "", suggested_title).split()).strip()
 
     # Remove parentheses (and content)
     pattern1 = r"\([^)]*\)"
@@ -64,9 +62,7 @@ def get_title_suggestion(
     # Dash whitespace
     if suggested_title.find("-") >= 0:
         pattern3 = r"\s?-\s?"
-        suggested_title = " ".join(
-            re.sub(pattern3, " - ", suggested_title).split()
-        ).strip()
+        suggested_title = " ".join(re.sub(pattern3, " - ", suggested_title).split()).strip()
 
     # Attempt to patch with channel name if possible
     elif channel:
@@ -81,14 +77,7 @@ def get_title_suggestion(
         print("\n------------------------------")
         print("About to update title of song.")
         print(f"Original  title: {title}")
-        print(
-            "Suggested title: "
-            + Fore.BLUE
-            + Back.WHITE
-            + suggested_title
-            + Fore.RESET
-            + Back.RESET
-        )
+        print("Suggested title: " + Fore.BLUE + Back.WHITE + suggested_title + Fore.RESET + Back.RESET)
 
         should_update_title = get_user_input("Should use suggestion?", "Y")
 
@@ -142,9 +131,7 @@ def print_suggestions(albums, artist, title, suggested_album):
 
 # TODO - TYPE HERE vvvvvvvvvvvvvvvvvvv
 def choose_album(albums: List[Tuple[str, int, int]], suggested_album: int) -> Tuple[str, int, int]:
-    album_index = get_user_input(
-        "Enter the correct album number", default=suggested_album + 1
-    )
+    album_index = get_user_input("Enter the correct album number", default=suggested_album + 1)
     album_index = int(album_index)
     if not albums:
         albums = [("", 0, 0)]
@@ -255,9 +242,7 @@ class MP3MetaData:
 
     @classmethod
     def from_video(cls, title: str, channel: str = "", interactive: bool = False):
-        band, song = get_title_suggestion(
-            title=title, channel=channel, interactive=interactive
-        )
+        band, song = get_title_suggestion(title=title, channel=channel, interactive=interactive)
         return cls(band=band, song=song)
 
     @property
@@ -377,13 +362,9 @@ Skip?""",
 # TODO - use this to load metadata if exists, and process song name (DECO)
 
 
-def update_metadata_for_directory(
-    base_path: str, interactive: bool = True, update_album_art: bool = False
-):
+def update_metadata_for_directory(base_path: str, interactive: bool = True, update_album_art: bool = False):
     try:
-        mp3_files = [
-            join(base_path, f) for f in listdir(base_path) if isfile(join(base_path, f))
-        ]
+        mp3_files = [join(base_path, f) for f in listdir(base_path) if isfile(join(base_path, f))]
     except FileNotFoundError:
         print(f"Base path {base_path} doesn't exist")
         exit(1)

@@ -40,9 +40,7 @@ class TestUpdateAlbum(unittest.TestCase):
 
         m1.update_album_art()
         self.assertTrue(os.path.isfile(m1.art_path))
-        self.assertEqual(
-            get_file_md5_hash(m1.art_path), "52a26502a8073d857e1d147b52efc455"
-        )
+        self.assertEqual(get_file_md5_hash(m1.art_path), "52a26502a8073d857e1d147b52efc455")
 
         os.remove(m1.art_path)
 
