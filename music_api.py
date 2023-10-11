@@ -1,14 +1,15 @@
 import sys
 import requests
 from typing import List, Optional, Tuple
-from constants import EMAIL_ADDRESS, IS_DEBUG
 import logging
+from config import IS_DEBUG, EMAIL_ADDRESS, TEST_DOWNLOAD_PATH
 
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
+
 if EMAIL_ADDRESS == "your-mail@mail.com":
-    print("Please update your mail address in constants.py (MusicBrainz asked to do so)")
+    print("Please update your mail address in .env file (MusicBrainz asked to do so)")
     sys.exit(1)
 
 
@@ -30,38 +31,22 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
         recording_info = data["recordings"]
         for recording in recording_info:
             received_title = recording.get("title", "Unknown")
-            received_artist = (
-                recording.get("artist-credit", [{}])[0]
-                .get("artist", {})
-                .get("name", "Unknown")
-            )
+            received_artist = recording.get("artist-credit", [{}])[0].get("artist", {}).get("name", "Unknown")
 
             if received_title.lower() != title.lower():
-                logger.debug(
-                    f"Skipping because of title mismatch ({title} != {received_title})"
-                )
+                logger.debug(f"Skipping because of title mismatch ({title} != {received_title})")
                 continue
 
             if received_artist.lower() != artist.lower():
-                logger.debug(
-                    f"Skipping because of artist mismatch ({artist} != {received_artist})"
-                )
+                logger.debug(f"Skipping because of artist mismatch ({artist} != {received_artist})")
                 continue
-            logger.debug(
-                f"Not Skipping. artist: {received_artist}, title: {received_title}"
-            )
+            logger.debug(f"Not Skipping. artist: {received_artist}, title: {received_title}")
             release_list = recording.get("releases", [])
             for release in release_list:
                 if release.get("title"):
                     album = release.get("title")
-                    year = (
-                        int(release.get("date", "0").split("-")[0])
-                        if release.get("date", "0").split("-")[0]
-                        else 0
-                    )
-                    track = (
-                        int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
-                    )
+                    year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
+                    track = int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
                     albums.append((album, year, track))
     return list(set(albums))
 
@@ -105,9 +90,16 @@ def main():
     track_info = get_track_info(artist, track)
     print(f'Possible album, year, track for "{artist} - {track}":')
     print(track_info)
-    index = int(input("Correct choice: "))
 
-    download_album_artwork(artist, track_info[index][0], "C:\\Temp\\DOMinion.png")
+    while True:
+        index = input("Correct choice: ")
+        if str.isnumeric(index) and 0 <= int(index) < len(track_info):
+            index = int(index)
+            break
+        else:
+            print("Invalid choice, choose again")
+
+    download_album_artwork(artist, track_info[index][0], TEST_DOWNLOAD_PATH)
 
 
 if __name__ == "__main__":

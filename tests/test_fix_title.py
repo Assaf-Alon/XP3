@@ -7,22 +7,16 @@ class TestFixTitle(unittest.TestCase):
         m1 = MP3MetaData.from_video(title="Band - Title", channel="Evil Channel >=D")
         self.assertEqual(m1.title, "Band - Title")
 
-        m2 = MP3MetaData.from_title(
-            title="A New Better Band - Title, The Better Version"
-        )
+        m2 = MP3MetaData.from_title(title="A New Better Band - Title, The Better Version")
         self.assertEqual(m2.title, "A New Better Band - Title, The Better Version")
         self.assertEqual(m2.band, "A New Better Band")
         self.assertEqual(m2.song, "Title, The Better Version")
 
     def test_fix_title_illegal_chars(self):
-        m1 = MP3MetaData.from_video(
-            title="Linkin Park - Paper?cut", channel="Linkin Park Fans ^^"
-        )
+        m1 = MP3MetaData.from_video(title="Linkin Park - Paper?cut", channel="Linkin Park Fans ^^")
         self.assertEqual(m1.title, "Linkin Park - Papercut")
 
-        m2 = MP3MetaData.from_video(
-            title="Linkin Park - Pap<e?r\\/c>ut", channel="Linkin Park"
-        )
+        m2 = MP3MetaData.from_video(title="Linkin Park - Pap<e?r\\/c>ut", channel="Linkin Park")
         self.assertEqual(m2.title, "Linkin Park - Papercut")
 
         m3 = MP3MetaData.from_video(
