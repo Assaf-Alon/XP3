@@ -17,6 +17,15 @@ strings_to_remove = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"
 
 
 def get_user_input(prompt: str, default: Any) -> str:
+    """Handles user input for functions that require interactivity
+
+    Args:
+        prompt (str): The message who'll be shown to the user
+        default (Any): The default value to be suggested to the user
+
+    Returns:
+        str: The chosen user input
+    """
     if prompt.endswith(":"):
         prompt = prompt[:-1]
     prompt = prompt.strip()
@@ -36,9 +45,22 @@ def get_user_input(prompt: str, default: Any) -> str:
 
 
 # TODO - Handle DECO here
+# TODO - Function is too long, split to smaller ones
 def get_title_suggestion(
     title: str = "", band: str = "", song: str = "", channel="", interactive=False
 ) -> Tuple[str, str]:
+    """Gets a suggested artist and track name, given a (possibly bad) title / band and song
+    If `band` and `song` aren't provided, title must be provided.
+    Args:
+        title (str, optional): The full title (e.g. `Linkin Park - Papercut`). Defaults to "".
+        band (str, optional): The band in question. Defaults to "".
+        song (str, optional): The song in question. Defaults to "".
+        channel (str, optional): Name of channel (used if song was taken from an external source). Defaults to "".
+        interactive (bool, optional): Whether user can provide interactive feedback to the suggestions. Defaults to False.
+
+    Returns:
+        Tuple[str, str]: Suggested band and suggested song
+    """
     assert (band and song) or title
 
     if band and song:
@@ -100,6 +122,7 @@ def get_title_suggestion(
     return band, song
 
 
+# TODO - Isn't used anywhere atm.
 def convert_to_filename(title: str) -> str:
     band, song = title.split(" - ")
     if band.startswith("DECO"):
@@ -107,6 +130,7 @@ def convert_to_filename(title: str) -> str:
     return title
 
 
+# TODO - Isn't used anywhere atm.
 def convert_from_filename(title: str) -> str:
     band, song = title.split(" - ")
     if band.startswith("DECO"):
@@ -114,7 +138,16 @@ def convert_from_filename(title: str) -> str:
     return title
 
 
-def print_suggestions(albums, artist, title, suggested_album):
+# TODO - consider changing this with `pick`
+def print_suggestions(albums: List[str, int, int], artist: str, title: str, suggested_album: int):
+    """Prints the suggestions for album-year-track trios.
+
+    Args:
+        albums List[str, int, int]: The suggested albums to print
+        artist (str): The artist of the track
+        title (str): The title of the track
+        suggested_album (int): The default album to choose.
+    """
     print("--------------------")
     print(f"Choose the correct album for {artist} - {title}:")
     print(" -1: Skip album metadata")
@@ -129,8 +162,16 @@ def print_suggestions(albums, artist, title, suggested_album):
         print("--------------------")
 
 
-# TODO - TYPE HERE vvvvvvvvvvvvvvvvvvv
 def choose_album(albums: List[Tuple[str, int, int]], suggested_album: int) -> Tuple[str, int, int]:
+    """Chooses an album interactivly using user input.
+
+    Args:
+        albums (List[Tuple[str, int, int]]): List of suggested albums.
+        suggested_album (int): Default index for album from the albums list.
+
+    Returns:
+        Tuple[str, int, int]: Tuple with chosen album, year, track
+    """
     album_index = get_user_input("Enter the correct album number", default=suggested_album + 1)
     album_index = int(album_index)
     if not albums:
@@ -151,6 +192,14 @@ def choose_album(albums: List[Tuple[str, int, int]], suggested_album: int) -> Tu
 
 
 def get_title_from_path(file_path: str) -> str:
+    """Gets title from the name of the file, giving the file's full path
+
+    Args:
+        file_path (str): Path of the file.
+
+    Returns:
+        str: File name without extension.
+    """
     file_name = basename(file_path)
     assert file_name.endswith(".mp3")
     file_name_no_extension = file_name[:-4]
@@ -158,6 +207,14 @@ def get_title_from_path(file_path: str) -> str:
 
 
 def get_suggested_album(albums: List[Tuple[str, int, int]]) -> int:
+    """Returns the index of a likely correct album out of the albums list using heurestics.
+
+    Args:
+        albums (List[Tuple[str, int, int]]): List of albums to get suggestion from.
+
+    Returns:
+        int: Index of suggested album, or -1 if there's no suggestion
+    """
     suggested_album = -1
     for album_index in range(len(albums)):
         # Year is greater then 0
@@ -196,6 +253,15 @@ class MP3MetaData:
 
     @classmethod
     def from_file(cls, file_path: str, interactive: bool = False):
+        """Initalized an instance of the class from a file and its metadata.
+
+        Args:
+            file_path (str): The path of the file.
+            interactive (bool, optional): Whether can use user input to decide on names. Defaults to False.
+
+        Returns:
+            MP3MetaData: Instance of the class from the file.
+        """
         assert file_path.endswith(".mp3")
         assert isfile(file_path)
 
@@ -237,11 +303,30 @@ class MP3MetaData:
 
     @classmethod
     def from_title(cls, title: str, interactive: bool = False):
+        """Initalized an instance of the class from a title.
+
+        Args:
+            title (str): The title.
+            interactive (bool, optional): Whether can use user input to decide on names. Defaults to False.
+
+        Returns:
+            MP3MetaData: Instance of the class from the title.
+        """
         band, song = get_title_suggestion(title=title, interactive=interactive)
         return cls(band=band, song=song)
 
     @classmethod
     def from_video(cls, title: str, channel: str = "", interactive: bool = False):
+        """Initalized an instance of the class from a video (title and hosting channel).
+
+        Args:
+            title (str): The title.
+            channel (str, optional): The hosting channel. Defaults to "".
+            interactive (bool, optional): Whether can use user input to decide on names. Defaults to False.
+
+        Returns:
+            MP3MetaData: Instance of the class from the title.
+        """
         band, song = get_title_suggestion(title=title, channel=channel, interactive=interactive)
         return cls(band=band, song=song)
 
@@ -251,11 +336,13 @@ class MP3MetaData:
 
     @title.setter
     def title(self, value: str):
+        # TODO - think what to do in more complex cases. Can I assume the artist doesn't have '-'?
         assert value.count(" - ") == 1
         self.band, self.song = value.split(" - ")
 
     def update_missing_fields(self, interactive: bool = False):
-        if not (self.band and self.song):
+        # TODO - Docstring
+        if not self.title:
             return
 
         # Check if there're missing fields
@@ -302,6 +389,7 @@ Skip?""",
         logger.debug(f"Album: {self.album}, year: {self.year}, track: {self.track}")
 
     def update_album_art(self):
+        # TODO - Docstring
         assert self.band and (self.album or self.song)
         name_for_art = self.album if self.album else self.song
         album_artwork_path = join(IMG_DIR, f"{self.band} - {name_for_art}.png")
@@ -314,6 +402,7 @@ Skip?""",
             self.art_path = album_artwork_path
 
     def apply_on_file(self, file_path: str):
+        # TODO - Docstring
         if not isfile(file_path):
             logger.error(f"File not found: {file_path}")
             return
@@ -363,6 +452,7 @@ Skip?""",
 
 
 def update_metadata_for_directory(base_path: str, interactive: bool = True, update_album_art: bool = False):
+    # TODO - Docstring
     try:
         mp3_files = [join(base_path, f) for f in listdir(base_path) if isfile(join(base_path, f))]
     except FileNotFoundError:
@@ -376,30 +466,3 @@ def update_metadata_for_directory(base_path: str, interactive: bool = True, upda
         if update_album_art:
             metadata.update_album_art()
         metadata.apply_on_file(file_path)
-
-
-# def update_metadata_from_song(base_dir: str, song: Song):
-#     mp3_path = join(base_dir, song.title + ".mp3")
-#     # mp3_path = base_dir + "\\" + song.title + ".mp3"
-#     file = music_tag.load_file(mp3_path)  # type: music_tag.id3.Mp3File
-
-#     artist = song.band
-#     if artist.lower().startswith("deco"):
-#         artist = "DECO*27"
-#     if artist.lower().startswith("p_"):
-#         artist = "P*Light"
-
-#     file["title"] = song.song
-#     file["artist"] = artist
-#     file["year"] = song.year
-#     file["album"] = song.album
-#     file["albumartist"] = artist
-#     file["tracknumber"] = song.track
-
-#     if song.art_path:
-#         with open(song.art_path, "rb") as img:
-#             file["artwork"] = img.read()
-
-#     file.save()
-
-#     logger.debug(f"Updated {song.band} - {song.song}")

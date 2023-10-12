@@ -13,8 +13,16 @@ if EMAIL_ADDRESS == "your-mail@mail.com":
     sys.exit(1)
 
 
-# Gets candidates (album, year, track number) for the track
 def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
+    """Queries musicbrainz.org for candidates (album, year, track number) for the track
+
+    Args:
+        artist (str): name of the artist associated with the title
+        title (str): name of the title
+
+    Returns:
+        List[Tuple[str, int, int]]: list of tuples with possible candidates for album track info
+    """
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
 
@@ -53,8 +61,16 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
     return list(set(albums))
 
 
-# Auxilary function to get group_id (used for album art)
 def get_release_group_id(artist: str, album: str) -> Optional[str]:
+    """Auxilary function to get group_id (used for album art)
+
+    Args:
+        artist (str): the artist associated with the album
+        album (str): the name of the album
+
+    Returns:
+        Optional[str]: the id of the release group, or None in the case of failure
+    """
     url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
     try:
@@ -72,6 +88,13 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
 
 
 def download_album_artwork(artist: str, album: str, filepath: str):
+    """Downloads album artwork from coverartarchive.org
+
+    Args:
+        artist (str): the artist associated with the album
+        album (str): the name of the album
+        filepath (str): path for the outputed image file
+    """
     release_group_id = get_release_group_id(artist, album)
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
