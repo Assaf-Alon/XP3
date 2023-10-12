@@ -21,12 +21,15 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Update from directory - use conventions to avoid API calls (format is `ARTIST/ALBUM (YEAR)`)  
 - [ ] Address API Scheme to improve query (be able to get data for Linkin Park - Papercut (album = Hybrid Theory) and Foo Fighters - I'll Stick Around (album = Foo Fighters)). Main issue stems from the fact that these songs were first released as singles.
 - [ ] Check if can swap band and song [Papercut - Linkin Park] (via API calls?)  
+- [ ] Add default to mp3_dir and mp4_dir, and in the program workflow check if it exists and create it it doesnt
+- [ ] CICD
 
 # Tests
 - [x] Test mp4 download  
 - [x] Test image download  
 - [ ] Test mp4 to mp3 convertion  
 - [ ] Test the metadata update  
+- [ ] https://stackoverflow.com/questions/60837213/how-to-run-test-case-marked-unittest-skip-in-python
 - [ ] Convert unittest to pytest
 
 # Feature Requests

@@ -139,7 +139,7 @@ def convert_from_filename(title: str) -> str:
 
 
 # TODO - consider changing this with `pick`
-def print_suggestions(albums: List[str, int, int], artist: str, title: str, suggested_album: int):
+def print_suggestions(albums: List[Tuple[str, int, int]], artist: str, title: str, suggested_album: int):
     """Prints the suggestions for album-year-track trios.
 
     Args:
