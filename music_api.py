@@ -9,7 +9,7 @@ logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
 
 if EMAIL_ADDRESS == "your-mail@mail.com":
-    print("Please update your mail address in .env file (MusicBrainz asked to do so)")
+    logger.error("Please update your mail address in .env file (MusicBrainz asked to do so")
     sys.exit(1)
 
 
@@ -29,6 +29,7 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
     albums = []
     if "recordings" in data:
         recording_info = data["recordings"]
+        logger.debug(f"Received {len(recording_info)} recordings")
         for recording in recording_info:
             received_title = recording.get("title", "Unknown")
             received_artist = recording.get("artist-credit", [{}])[0].get("artist", {}).get("name", "Unknown")
@@ -42,6 +43,7 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
                 continue
             logger.debug(f"Not Skipping. artist: {received_artist}, title: {received_title}")
             release_list = recording.get("releases", [])
+            logger.debug(f"Received {len(release_list)} recordings")
             for release in release_list:
                 if release.get("title"):
                     album = release.get("title")

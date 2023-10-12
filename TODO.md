@@ -8,7 +8,7 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Catch errors on relevant operations (try except)  
 - [ ] Raise errors instead of assert  
 - [ ] Change pick  
-- [ ] Multiple constructors, with @classmethod maybe (from_file, from_video)  
+- [x] Multiple constructors, with @classmethod maybe (from_file, from_video)  
 - [ ] Special cases for artists (eg. DECO*27) - to dictionary instead of convert_[to/from]  _filename
 - [ ] Special cases for title strings (strings_to_remove) - to dictionary  
 - [ ] Add `get_artwork_path` function (handle cases of singles and such)  
