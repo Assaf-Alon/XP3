@@ -5,7 +5,7 @@ from music_api import get_track_info, download_album_artwork
 from config import IMG_DIR, IS_DEBUG
 from colorama import Fore, Back
 from os import listdir
-from os.path import isfile, join, basename
+from os.path import isfile, join, basename, dirname
 import music_tag
 import logging
 
@@ -56,7 +56,7 @@ def get_title_suggestion(
         band (str, optional): The band in question. Defaults to "".
         song (str, optional): The song in question. Defaults to "".
         channel (str, optional): Name of channel (used if song was taken from an external source). Defaults to "".
-        interactive (bool, optional): Whether user can provide interactive feedback to the suggestions. Defaults to False.
+        interactive (bool, optional): Whether user can give interactive feedback to the suggestion. Defaults to False.
 
     Returns:
         Tuple[str, str]: Suggested band and suggested song
@@ -265,7 +265,10 @@ class MP3MetaData:
         assert file_path.endswith(".mp3")
         assert isfile(file_path)
 
-        mp3_file = music_tag.load_file(file_path)
+        try:
+            mp3_file = music_tag.load_file(file_path)
+        except Exception:
+            mp3_file = dict()
         album_artwork_path = ""
         if not mp3_file:
             song, band, album, year, track, album_art, art_configured = "", "", "", "", "", "", False
@@ -278,10 +281,19 @@ class MP3MetaData:
             album_art = mp3_file.get("artwork")
             art_configured = bool(album_art)
 
+        # Patch band and song
         if not (song and band):
             title = get_title_from_path(file_path)
-            song, band = get_title_suggestion(title, interactive=interactive)
+            band, song = get_title_suggestion(title, interactive=interactive)
 
+        # Attempt patching album and year
+        if not (album and year):
+            album_info = MP3MetaData.extract_album_info_from_path(file_path)
+            if album_info is not None:
+                album = album_info[1]
+                year = int(album_info[2])
+
+        # Attempt patching album art
         if album_art:
             # TODO - use function get_artwork_path
             name_for_art = album if album else song
@@ -329,6 +341,18 @@ class MP3MetaData:
         """
         band, song = get_title_suggestion(title=title, channel=channel, interactive=interactive)
         return cls(band=band, song=song)
+
+    @staticmethod
+    def extract_album_info_from_path(file_path: str):
+        parent_directory_path = dirname(file_path)
+        parent_directory = basename(parent_directory_path)
+        # No album info if directory's pattern is not `ALBUM (YEAR)``
+        path_match = re.match(r"(?P<album>.+) \((?P<year>\d{4})\)", parent_directory)
+        if not path_match:
+            return None
+
+        grandparent_directory = basename(dirname(parent_directory))
+        return (grandparent_directory, path_match.group("album"), path_match.group("year"))
 
     @property
     def title(self) -> str:
