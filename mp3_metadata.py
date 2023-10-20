@@ -3,7 +3,7 @@ import logging
 import re
 from os import listdir
 from os.path import basename, dirname, isfile, join
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import music_tag
 from colorama import Back, Fore
@@ -126,6 +126,15 @@ def get_title_suggestion(
 
 # TODO - Isn't used anywhere atm.
 def convert_to_filename(title: str) -> str:
+    """Converts title to a file name.
+       Used to handle edge cases where the title contains illegal file characters.
+
+    Args:
+        title (str): The title.
+
+    Returns:
+        str: The file name.
+    """
     band, song = title.split(" - ")
     if band.startswith("DECO"):
         return "DECO*27" + " - " + song
@@ -133,11 +142,20 @@ def convert_to_filename(title: str) -> str:
 
 
 # TODO - Isn't used anywhere atm.
-def convert_from_filename(title: str) -> str:
-    band, song = title.split(" - ")
+def convert_from_filename(filename: str) -> str:
+    """Converts filename to a title.
+       Used to handle edge cases where the title contains illegal file characters.
+
+    Args:
+        title (str): The file name.
+
+    Returns:
+        str: The title.
+    """
+    band, song = filename.split(" - ")
     if band.startswith("DECO"):
         return "DECO_27" + " - " + song
-    return title
+    return filename
 
 
 # TODO - consider changing this with `pick`
@@ -233,6 +251,8 @@ def get_suggested_album(albums: List[Tuple[str, int, int]]) -> int:
 
 
 class MP3MetaData:
+    """Class that represents mp3 metadata."""
+
     def __init__(
         self,
         band: str,
@@ -293,7 +313,7 @@ class MP3MetaData:
             album_info = MP3MetaData.extract_album_info_from_path(file_path)
             if album_info is not None:
                 album = album_info[1]
-                year = int(album_info[2])
+                year = album_info[2]
 
         # Attempt patching album art
         if album_art:
@@ -345,7 +365,16 @@ class MP3MetaData:
         return cls(band=band, song=song)
 
     @staticmethod
-    def extract_album_info_from_path(file_path: str):
+    def extract_album_info_from_path(file_path: str) -> Optional[Tuple[str, str, int]]:
+        """Tries to get album info from a path to a file.
+           Uses the convention that album directory names are `ALBUM (YEAR)`
+
+        Args:
+            file_path (str): The path to the file
+
+        Returns:
+            _type_: _description_
+        """
         parent_directory_path = dirname(file_path)
         parent_directory = basename(parent_directory_path)
         # No album info if directory's pattern is not `ALBUM (YEAR)``
@@ -354,7 +383,7 @@ class MP3MetaData:
             return None
 
         grandparent_directory = basename(dirname(parent_directory))
-        return (grandparent_directory, path_match.group("album"), path_match.group("year"))
+        return (grandparent_directory, path_match.group("album"), int(path_match.group("year")))
 
     @property
     def title(self) -> str:
@@ -362,6 +391,7 @@ class MP3MetaData:
 
     @title.setter
     def title(self, value: str):
+        """Updates title"""
         # TODO - think what to do in more complex cases. Can I assume the artist doesn't have '-'?
         assert value.count(" - ") == 1
         self.band, self.song = value.split(" - ")
@@ -414,10 +444,10 @@ Skip?""",
         print_suggestions(albums, artist, title, suggested_album)
         self.album, self.year, self.track = choose_album(albums, suggested_album)
 
-        logger.debug(f"Album: {self.album}, year: {self.year}, track: {self.track}")
+        logger.debug("Album: %s, year: %d, track: %d", self.album, self.year, self.track)
 
     def update_album_art(self):
-        # TODO - Docstring
+        """Updates album artwork path. Downloads the artwork if necessary"""
         if not self.band:
             return
 
@@ -435,14 +465,18 @@ Skip?""",
             self.art_path = album_artwork_path
 
     def apply_on_file(self, file_path: str):
-        # TODO - Docstring
+        """Applies metadata on a file - updates metadata fields according to the class attributes
+
+        Args:
+            file_path (str): The path to the file
+        """
         if not isfile(file_path):
-            logger.error(f"File not found: {file_path}")
+            logger.error("File not found: %s", file_path)
             return
 
         mp3_file = music_tag.load_file(file_path)
         if not mp3_file:
-            logger.error(f"Failed to load {file_path}")
+            logger.error("Failed to load %s", file_path)
             return
 
         # For linter
@@ -485,7 +519,13 @@ Skip?""",
 
 
 def update_metadata_for_directory(base_path: str, interactive: bool = True, update_album_art: bool = False):
-    # TODO - Docstring
+    """Updates mp3 metadata of files in a directory.
+
+    Args:
+        base_path (str): Path of the directory that contains the mp3 files
+        interactive (bool, optional): Should run in interactive mode. Defaults to True.
+        update_album_art (bool, optional): Should update the album art of the files. Defaults to False.
+    """
     try:
         mp3_files = [join(base_path, f) for f in listdir(base_path) if isfile(join(base_path, f))]
     except FileNotFoundError:

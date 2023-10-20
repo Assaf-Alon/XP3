@@ -40,21 +40,21 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
     albums = []
     if "recordings" in data:
         recording_info = data["recordings"]
-        logger.debug(f"Received {len(recording_info)} recordings")
+        logger.debug("Received %d recordings", len(recording_info))
         for recording in recording_info:
             received_title = recording.get("title", "Unknown")
             received_artist = recording.get("artist-credit", [{}])[0].get("artist", {}).get("name", "Unknown")
 
             if received_title.lower() != title.lower():
-                logger.debug(f"Skipping because of title mismatch ({title} != {received_title})")
+                logger.debug("Skipping because of title mismatch (%s != %s)", title, received_title)
                 continue
 
             if received_artist.lower() != artist.lower():
-                logger.debug(f"Skipping because of artist mismatch ({artist} != {received_artist})")
+                logger.debug("Skipping because of artist mismatch (%s != %s)", artist, received_artist)
                 continue
-            logger.debug(f"Not Skipping. artist: {received_artist}, title: {received_title}")
+            logger.debug("Not Skipping. artist: %s, title: %s", received_artist, received_title)
             release_list = recording.get("releases", [])
-            logger.debug(f"Received {len(release_list)} recordings")
+            logger.debug("Received %d recordings", len(release_list))
             for release in release_list:
                 if release.get("title"):
                     album = release.get("title")
@@ -112,6 +112,7 @@ def download_album_artwork(artist: str, album: str, filepath: str):
 
 
 def main():
+    """Just some manual testing, can ignore"""
     artist = "Skillet"
     track = "Dominion"
 
@@ -124,8 +125,7 @@ def main():
         if str.isnumeric(index) and 0 <= int(index) < len(track_info):
             index = int(index)
             break
-        else:
-            print("Invalid choice, choose again")
+        print("Invalid choice, choose again")
 
     download_album_artwork(artist, track_info[index][0], TEST_DOWNLOAD_PATH)
 

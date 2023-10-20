@@ -8,7 +8,10 @@ from mp3 import download_ytvid, get_playlist_songs
 
 
 class TestDownloadSong(unittest.TestCase):
+    """Tests songs downloading and playlist retrieval"""
+
     def test_get_playlist_songs1(self):
+        """Tests the get_playlist_songs function"""
         playlist_url = "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
 
         songs = get_playlist_songs(
@@ -29,6 +32,7 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(song.track, 1)
 
     def test_get_playlist_songs2(self):
+        """Tests the get_playlist_songs function"""
         playlist_url = "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
         songs = get_playlist_songs(
             playlist_url=playlist_url,
@@ -48,6 +52,7 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(song.track, 2)
 
     def test_get_playlist_songs3(self):
+        """Tests the get_playlist_songs function"""
         playlist_url = "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
         songs = get_playlist_songs(
             playlist_url=playlist_url,
@@ -75,6 +80,7 @@ class TestDownloadSong(unittest.TestCase):
 
     @unittest.skip("Heavy test")
     def test_download_ytvid1(self):
+        """Tests the download_ytvid function"""
         playlist_url = "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
 
         songs = get_playlist_songs(

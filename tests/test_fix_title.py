@@ -5,7 +5,10 @@ from mp3_metadata import MP3MetaData
 
 
 class TestFixTitle(unittest.TestCase):
+    """Tests that verify title fixing on creation"""
+
     def test_fix_title_no_changes(self):
+        """Tests valid metadata creation"""
         m1 = MP3MetaData.from_video(title="Band - Title", channel="Evil Channel >=D")
         self.assertEqual(m1.title, "Band - Title")
 
@@ -15,6 +18,7 @@ class TestFixTitle(unittest.TestCase):
         self.assertEqual(m2.song, "Title, The Better Version")
 
     def test_fix_title_illegal_chars(self):
+        """Tests removal of illegal characters"""
         m1 = MP3MetaData.from_video(title="Linkin Park - Paper?cut", channel="Linkin Park Fans ^^")
         self.assertEqual(m1.title, "Linkin Park - Papercut")
 
@@ -28,6 +32,7 @@ class TestFixTitle(unittest.TestCase):
         self.assertEqual(m3.title, "The Book Of Mormon - I Believe")
 
     def test_fix_title_parentheses(self):
+        """Tests removal of parantheses (heuristic)"""
         m1 = MP3MetaData.from_video(
             title=" System Of A Down - Toxicity (Official HD Video)",
             channel="System Of A Down",
@@ -47,6 +52,7 @@ class TestFixTitle(unittest.TestCase):
         self.assertEqual(m3.title, "Journey - Don't Stop Believin'")
 
     def test_fix_title_hyphen(self):
+        """Tests that title was created correctly with band implicitly stated in the channel"""
         m1 = MP3MetaData.from_video(
             title="Six Feet Under",
             channel="Smash Into Pieces",
@@ -57,6 +63,7 @@ class TestFixTitle(unittest.TestCase):
         self.assertEqual(m2.title, "Smash Into Pieces - Six Feet Under")
 
     def test_fix_title_strings_to_remove(self):
+        """Tests that on initialization, the title removes specific strings"""
         m1 = MP3MetaData.from_video(
             "My Chemical Romance - Dead! Lyrics",
             "Muzic303",
