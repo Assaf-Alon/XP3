@@ -1,3 +1,4 @@
+"""Definitions of variables used for configurations, such as directory paths"""
 from decouple import config
 
 EMAIL_ADDRESS = str(config("EMAIL_ADDRESS", default="your-mail@mail.com", cast=str))

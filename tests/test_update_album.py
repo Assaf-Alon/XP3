@@ -1,10 +1,13 @@
-import unittest
-from mp3_metadata import MP3MetaData
+"""Tests that the MP3MetaData class updates the missing fields correctly using an external API"""
 import os
-from os.path import join, dirname
 import shutil
+import unittest
+from os.path import dirname, join
+
 from utils import get_file_md5_hash
+
 from config import TMP_DIR
+from mp3_metadata import MP3MetaData
 
 
 class TestUpdateAlbum(unittest.TestCase):

@@ -1,9 +1,10 @@
-import unittest
-from mp3 import get_playlist_songs, convert_mp4_to_mp3, download_ytvid
-from config import TMP_DIR
+"""Tests functions related to songs downloading """
 import hashlib
-
 import os
+import unittest
+
+from config import TMP_DIR
+from mp3 import download_ytvid, get_playlist_songs
 
 
 class TestDownloadSong(unittest.TestCase):

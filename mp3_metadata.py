@@ -1,13 +1,15 @@
+"""Module providing a class to work with mp3 metadata (MP3MetaData) and related utilities"""
+import logging
 import re
+from os import listdir
+from os.path import basename, dirname, isfile, join
 from typing import Any, List, Tuple
 
-from music_api import get_track_info, download_album_artwork
-from config import IMG_DIR, IS_DEBUG
-from colorama import Fore, Back
-from os import listdir
-from os.path import isfile, join, basename, dirname
 import music_tag
-import logging
+from colorama import Back, Fore
+
+from config import IMG_DIR, IS_DEBUG
+from music_api import download_album_artwork, get_track_info
 
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)

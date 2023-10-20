@@ -6,6 +6,7 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [x] Call fix_title on init. Remove the function  
 - [x] Remove title, work with band & song only (title can be accessed via getters)  
 - [x] Multiple constructors, with @classmethod maybe (from_file, from_video)  
+- [ ] Fix pylint issues (pylint $(git ls-files '*.py'))
 - [ ] Create an Album class instead of using 3-tuple.
 - [ ] Catch errors on relevant operations (try except)  
 - [ ] Raise errors instead of assert  

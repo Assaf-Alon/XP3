@@ -1,3 +1,4 @@
+"""Utilities used for testing"""
 import hashlib
 
 

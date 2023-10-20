@@ -1,4 +1,6 @@
+"""Tests that the method used to suggest a fixed title works as expected"""
 import unittest
+
 from mp3_metadata import MP3MetaData
 
 

@@ -1,13 +1,13 @@
+"""Functions used to get data related to mp3 files and download them"""
+import logging
+from os.path import basename, join
+from typing import List, Optional, Tuple
+
 import pytube
 from moviepy.editor import VideoFileClip
 
+from config import DEFAULT_PLAYLIST, IS_DEBUG, MP3_DIR, MP4_DIR
 from mp3_metadata import MP3MetaData
-from config import MP3_DIR, MP4_DIR, DEFAULT_PLAYLIST, IS_DEBUG
-
-from os.path import join, basename
-
-import logging
-from typing import Optional, Tuple, List
 
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)

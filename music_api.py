@@ -1,8 +1,11 @@
-import sys
-import requests
-from typing import List, Optional, Tuple
+"""Funtions to extract data from the musicbrainz API, such as an album given a song and a band"""
 import logging
-from config import IS_DEBUG, EMAIL_ADDRESS, TEST_DOWNLOAD_PATH
+import sys
+from typing import List, Optional, Tuple
+
+import requests
+
+from config import EMAIL_ADDRESS, IS_DEBUG, TEST_DOWNLOAD_PATH
 
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
