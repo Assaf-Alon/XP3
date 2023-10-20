@@ -93,7 +93,7 @@ def convert_mp4_to_mp3(mp4_path: str) -> Optional[str]:
     return mp3_path
 
 
-def download_XPrimental(
+def download_xprimental(
     playlist_url: str = DEFAULT_PLAYLIST,
     start_index: int = 1,
     end_index: int = 99999,

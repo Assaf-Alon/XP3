@@ -19,7 +19,7 @@ class TestUpdateAlbum(unittest.TestCase):
     def setUp(self):
         """Creates files for testing purposes"""
         os.makedirs(dirname(self.song_path))
-        open(self.song_path, "x", encoding="utf-8").close()
+        open(self.song_path, "x", encoding="utf-8").close()  # pylint: disable=consider-using-with
         return super().setUp()
 
     def tearDown(self) -> None:

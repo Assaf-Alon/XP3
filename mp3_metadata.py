@@ -290,7 +290,7 @@ class MP3MetaData:
 
         try:
             mp3_file = music_tag.load_file(file_path)
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             mp3_file = dict()
         album_artwork_path = ""
         if not mp3_file:
@@ -403,7 +403,8 @@ class MP3MetaData:
         Args:
             interactive (bool, optional): Should run in interactive mode, get user feedback regarding title fixes.
                                           Defaults to False.
-            keep_current_metadata (bool, optional): States whether to use existing metadata (USED ONLY IF interactive=False).
+            keep_current_metadata (bool, optional): States whether to use existing metadata.
+                                                    USED ONLY IF interactive=False!
                                                     Defaults to False.
         """
         if not self.title:

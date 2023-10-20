@@ -1,7 +1,7 @@
 """Funtions to extract data from the musicbrainz API, such as an album given a song and a band"""
 import logging
 import sys
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
 import requests
 
@@ -16,30 +16,21 @@ if EMAIL_ADDRESS == "your-mail@mail.com":
     sys.exit(1)
 
 
-def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
-    """Queries musicbrainz.org for candidates (album, year, track number) for the track
+def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Tuple[str, int, int]]:
+    """Given MusicBrainz response, returns album candidates
 
     Args:
-        artist (str): name of the artist associated with the title
-        title (str): name of the title
+        json_data (Any): Data received from MusicBrainz API
+        artist (str): Artist name used for API request
+        title (str): Title used for API request
 
     Returns:
-        List[Tuple[str, int, int]]: list of tuples with possible candidates for album track info
+        List[Tuple[str, int, int]]: list of tuples with possible candidates for album track info.
     """
-    # MusicBrainz API request URL
-    url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
-
-    # User-Agent header (because they requested nicely)
-    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
-
-    # API request
-    response = requests.get(url, headers=headers, timeout=3)
-    data = response.json()
-
-    # Extract candidates for: album, year, track
     albums = []
-    if "recordings" in data:
-        recording_info = data["recordings"]
+
+    if "recordings" in json_data:
+        recording_info = json_data["recordings"]
         logger.debug("Received %d recordings", len(recording_info))
         for recording in recording_info:
             received_title = recording.get("title", "Unknown")
@@ -62,6 +53,30 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
                     track = int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
                     albums.append((album, year, track))
     return list(set(albums))
+
+
+def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
+    """Queries musicbrainz.org for candidates (album, year, track number) for the track.
+
+    Args:
+        artist (str): name of the artist associated with the title.
+        title (str): name of the title.
+
+    Returns:
+        List[Tuple[str, int, int]]: list of tuples with possible candidates for album track info.
+    """
+    # MusicBrainz API request URL
+    url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
+
+    # User-Agent header (because they requested nicely)
+    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
+
+    # API request
+    response = requests.get(url, headers=headers, timeout=3)
+    data = response.json()
+
+    # Extract candidates for: album, year, track
+    return get_album_candidates(data, artist, title)
 
 
 def get_release_group_id(artist: str, album: str) -> Optional[str]:
