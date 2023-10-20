@@ -419,7 +419,7 @@ Skip?""",
         if not self.band:
             return
 
-        if not self.album or self.song:
+        if not (self.album or self.song):
             return
 
         name_for_art = self.album if self.album else self.song
