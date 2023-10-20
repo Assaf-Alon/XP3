@@ -11,6 +11,8 @@ from mp3_metadata import MP3MetaData
 
 
 class TestUpdateAlbum(unittest.TestCase):
+    """Class for testing album information update on creation of MP3MetaData"""
+
     bb_path = join(TMP_DIR, "Breaking Benjamin")
     song_path = join(join(bb_path, "Phobia (2006)"), "Breaking Benjamin - The Diary of Jane.mp3")
 

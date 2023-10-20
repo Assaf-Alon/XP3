@@ -33,7 +33,7 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     # API request
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=3)
     data = response.json()
 
     # Extract candidates for: album, year, track
@@ -77,7 +77,7 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
     url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=3)
         response.raise_for_status()
         data = response.json()
         if "releases" in data and data["releases"]:
@@ -103,7 +103,7 @@ def download_album_artwork(artist: str, album: str, filepath: str):
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     try:
-        response = requests.get(url, headers)
+        response = requests.get(url, headers, timeout=3)
         if response.status_code == 200:
             with open(filepath, "wb") as file:
                 file.write(response.content)

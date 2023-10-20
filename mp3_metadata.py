@@ -1,6 +1,7 @@
 """Module providing a class to work with mp3 metadata (MP3MetaData) and related utilities"""
 import logging
 import re
+import sys
 from os import listdir
 from os.path import basename, dirname, isfile, join
 from typing import Any, List, Optional, Tuple
@@ -14,8 +15,8 @@ from music_api import download_album_artwork, get_track_info
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
-pattern_illegal_chars = r'[\\/:*?"<>|]'
-strings_to_remove = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"]
+PATTERN_ILLEGAL_CHARS = r'[\\/:*?"<>|]'
+STRINGS_TO_REMOVE = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"]
 
 
 def get_user_input(prompt: str, default: Any) -> str:
@@ -71,11 +72,11 @@ def get_title_suggestion(
     suggested_title = title
 
     # Swap colon (:) with hyphen (-)
-    if suggested_title.find("-") < 0 and suggested_title.find(":") >= 0:
+    if "-" not in suggested_title and ":" in suggested_title:
         suggested_title = suggested_title.replace(":", "-")
 
     # Remove illegal characters
-    suggested_title = " ".join(re.sub(pattern_illegal_chars, "", suggested_title).split()).strip()
+    suggested_title = " ".join(re.sub(PATTERN_ILLEGAL_CHARS, "", suggested_title).split()).strip()
 
     # Remove parentheses (and content)
     pattern1 = r"\([^)]*\)"
@@ -92,7 +93,7 @@ def get_title_suggestion(
     elif channel:
         suggested_title = channel + " - " + suggested_title
 
-    for s in strings_to_remove:
+    for s in STRINGS_TO_REMOVE:
         suggested_title = suggested_title.replace(s, "")
     suggested_title = suggested_title.strip()
 
@@ -198,7 +199,7 @@ def choose_album(albums: List[Tuple[str, int, int]], suggested_album: int) -> Tu
         albums = [("", 0, 0)]
     if album_index == -1:
         return ("", 0, 0)  # No album information needed
-    elif album_index == 0:
+    if album_index == 0:
         album = get_user_input("Enter album name", default=albums[suggested_album][0])
         year = get_user_input("Enter album year", default=albums[suggested_album][1])
         track = get_user_input("Enter album track", default=albums[suggested_album][2])
@@ -236,15 +237,15 @@ def get_suggested_album(albums: List[Tuple[str, int, int]]) -> int:
         int: Index of suggested album, or -1 if there's no suggestion
     """
     suggested_album = -1
-    for album_index in range(len(albums)):
+    for album_index, album in enumerate(albums):
         # Year is greater then 0
-        if albums[album_index][1] == 0:
+        if album[1] == 0:
             continue
-        if "hits" in albums[album_index][0].lower():
+        if "hits" in album[0].lower():
             continue
-        if "live" in albums[album_index][0].lower():
+        if "live" in album[0].lower():
             continue
-        if albums[album_index][1] > 0:
+        if album[1] > 0:
             suggested_album = album_index
             break
     return suggested_album
@@ -387,6 +388,7 @@ class MP3MetaData:
 
     @property
     def title(self) -> str:
+        """Get title (band - song)"""
         return self.band + " - " + self.song
 
     @title.setter
@@ -397,16 +399,25 @@ class MP3MetaData:
         self.band, self.song = value.split(" - ")
 
     def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
-        # TODO - Docstring
+        """Updates missing mp3 metadata fields.
+        Args:
+            interactive (bool, optional): Should run in interactive mode, get user feedback regarding title fixes.
+                                          Defaults to False.
+            keep_current_metadata (bool, optional): States whether to use existing metadata (USED ONLY IF interactive=False).
+                                                    Defaults to False.
+        """
         if not self.title:
             return
 
         # Check if there're missing fields
         if self.album and self.year and self.track:
-            if not interactive:
+            # Not interactive and keeping metadata, nothing to do
+            if not interactive and keep_current_metadata:
+                logger.debug("Keeping current metadata for %s", self.title)
                 return
-            should_use_existing_metadata = True
-            if not keep_current_metadata:
+            if not interactive:
+                should_use_existing_metadata = keep_current_metadata
+            else:  # Interactive mode
                 should_use_existing_metadata = get_user_input(
                     prompt=f"""Metadata already set.
 {self.title}
@@ -417,6 +428,7 @@ Skip?""",
                     default="Y",
                 )
 
+            # TODO - handle user input
             if should_use_existing_metadata.lower() == "y":
                 return
 
@@ -530,7 +542,7 @@ def update_metadata_for_directory(base_path: str, interactive: bool = True, upda
         mp3_files = [join(base_path, f) for f in listdir(base_path) if isfile(join(base_path, f))]
     except FileNotFoundError:
         print(f"Base path {base_path} doesn't exist")
-        exit(1)
+        sys.exit(1)
     for file_path in mp3_files:
         if not file_path.endswith(".mp3"):
             continue
