@@ -23,10 +23,13 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Check if can swap band and song [Papercut - Linkin Park] (via API calls?)  
 - [ ] Add default to mp3_dir and mp4_dir, and in the program workflow check if it exists and create it it doesnt
 - [ ] CICD
+- [ ] Add more logging (debug)
+- [ ] User interaction file (get_user_input, convert n/y to booleans and such...)
 
 # Tests
 - [x] Test mp4 download  
 - [x] Test image download  
+- [ ] Test singles that were later added to albums
 - [ ] Test mp4 to mp3 convertion  
 - [ ] Test the metadata update  
 - [ ] Test extract_album_info_from_path 

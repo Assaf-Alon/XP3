@@ -115,7 +115,7 @@ def get_title_suggestion(
         band, *rest = suggested_title.split(" - ")
         song = " - ".join(rest)
     else:
-        band, song = "ERROR", "ERROR"
+        band, song = "", ""
 
     band = band.strip()
     song = song.strip()
@@ -364,7 +364,7 @@ class MP3MetaData:
         assert value.count(" - ") == 1
         self.band, self.song = value.split(" - ")
 
-    def update_missing_fields(self, interactive: bool = False):
+    def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
         # TODO - Docstring
         if not self.title:
             return
@@ -373,17 +373,19 @@ class MP3MetaData:
         if self.album and self.year and self.track:
             if not interactive:
                 return
-            should_use_existing_metadata = get_user_input(
-                prompt=f"""Metadata already set.
+            should_use_existing_metadata = True
+            if not keep_current_metadata:
+                should_use_existing_metadata = get_user_input(
+                    prompt=f"""Metadata already set.
 {self.title}
 album = {self.album}
 year = {self.year}
 track = {self.track}
 Skip?""",
-                default="Y",
-            )
+                    default="Y",
+                )
 
-            if should_use_existing_metadata:
+            if should_use_existing_metadata.lower() == "y":
                 return
 
         # Get album candidates
@@ -414,7 +416,12 @@ Skip?""",
 
     def update_album_art(self):
         # TODO - Docstring
-        assert self.band and (self.album or self.song)
+        if not self.band:
+            return
+
+        if not self.album or self.song:
+            return
+
         name_for_art = self.album if self.album else self.song
         album_artwork_path = join(IMG_DIR, f"{self.band} - {name_for_art}.png")
 

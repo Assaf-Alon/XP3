@@ -66,6 +66,39 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m1.album, "Phobia")
         self.assertEqual(m1.year, 2006)
 
+    def test_update_album_singles(self):
+        """
+        Tests specific edge cases where singles were released, and later
+        added to an album.
+        """
+        # Dragonforce - Cry Thunder
+        m1 = MP3MetaData.from_title(title="Dragonforce - Cry Thunder")
+        m1.update_missing_fields(interactive=False)
+        self.assertEqual(m1.album, "The Power Within")
+        self.assertEqual(m1.year, 2012)
+        self.assertEqual(m1.track, 3)
+
+        # Avenged Sevenfold - Bat Country
+        m2 = MP3MetaData.from_title(title="Avenged Sevenfold - Bat Country")
+        m2.update_missing_fields(interactive=False)
+        self.assertEqual(m2.album, "City of Evil")
+        self.assertEqual(m2.year, 2005)
+        self.assertEqual(m2.track, 4)
+
+        # Breaking Benjamin - Polyamorous
+        m2 = MP3MetaData.from_title(title="Breaking Benjamin - Polyamorous")
+        m2.update_missing_fields(interactive=False)
+        self.assertEqual(m2.album, "Saturate")
+        self.assertEqual(m2.year, 2002)
+        self.assertEqual(m2.track, 3)
+
+        # Bad Wolves - Zombie
+        m2 = MP3MetaData.from_title(title="Bad Wolves - Zombie")
+        m2.update_missing_fields(interactive=False)
+        self.assertEqual(m2.album, "Disobey")
+        self.assertEqual(m2.year, 2018)
+        self.assertEqual(m2.track, 4)
+
 
 if __name__ == "__main__":
     unittest.main()
