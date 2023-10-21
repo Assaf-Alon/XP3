@@ -1,9 +1,10 @@
 """Module providing a class to work with mp3 metadata (MP3MetaData) and related utilities"""
 import logging
+import os
 import re
 import sys
-from os import listdir
 from os.path import basename, dirname, isfile, join
+from pathlib import Path
 from typing import Any, List, Optional, Tuple
 
 import music_tag
@@ -531,24 +532,28 @@ Skip?""",
 # TODO - use this to load metadata if exists, and process song name (DECO)
 
 
-def update_metadata_for_directory(base_path: str, interactive: bool = True, update_album_art: bool = False):
+def update_metadata_for_directory(
+    base_path: str, interactive: bool = True, update_album_art: bool = False, recursive: bool = False
+):
     """Updates mp3 metadata of files in a directory.
 
     Args:
         base_path (str): Path of the directory that contains the mp3 files
         interactive (bool, optional): Should run in interactive mode. Defaults to True.
         update_album_art (bool, optional): Should update the album art of the files. Defaults to False.
+        recursive (bool, optional): Should apply to subdirectories. Defaults to False.
     """
-    try:
-        mp3_files = [join(base_path, f) for f in listdir(base_path) if isfile(join(base_path, f))]
-    except FileNotFoundError:
-        print(f"Base path {base_path} doesn't exist")
+    if not os.path.isdir(base_path):
+        logger.error("Provided base path %s is not an existing directory", base_path)
         sys.exit(1)
-    for file_path in mp3_files:
-        if not file_path.endswith(".mp3"):
-            continue
-        metadata = MP3MetaData.from_file(file_path)
+
+    paths = Path(base_path).rglob("*.mp3") if recursive else Path(base_path).glob("*.mp3")
+
+    for path in paths:
+        input(f"About to set data for {path.name}. Press enter to continue...")
+        metadata = MP3MetaData.from_file(file_path=str(path.absolute()))
         metadata.update_missing_fields(interactive=interactive)
+
         if update_album_art:
             metadata.update_album_art()
-        metadata.apply_on_file(file_path)
+        metadata.apply_on_file(file_path=path.absolute())
