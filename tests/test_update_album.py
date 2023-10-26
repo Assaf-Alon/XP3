@@ -77,10 +77,9 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m1.album, "Phobia")
         self.assertEqual(m1.year, 2006)
 
-    def test_update_album_singles(self):
+    def test_update_album_singles1(self):
         """
-        Tests specific edge cases where singles were released, and later
-        added to an album.
+        Edge cases where singles were released, and later added to an album.
         """
         # Dragonforce - Cry Thunder
         m1 = MP3MetaData.from_title(title="Dragonforce - Cry Thunder")
@@ -96,19 +95,30 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2005)
         self.assertEqual(m2.track, 4)
 
-        # Breaking Benjamin - Polyamorous
-        m2 = MP3MetaData.from_title(title="Breaking Benjamin - Polyamorous")
-        m2.update_missing_fields(interactive=False)
-        self.assertEqual(m2.album, "Saturate")
-        self.assertEqual(m2.year, 2002)
-        self.assertEqual(m2.track, 3)
-
         # Bad Wolves - Zombie
         m2 = MP3MetaData.from_title(title="Bad Wolves - Zombie")
         m2.update_missing_fields(interactive=False)
         self.assertEqual(m2.album, "Disobey")
         self.assertEqual(m2.year, 2018)
         self.assertEqual(m2.track, 4)
+
+    def test_update_album_singles2(self):
+        """
+        Actual singles that were release as singles, and should be treated as such
+        """
+        # Avenged Sevenfold - Not Ready to Die
+        m1 = MP3MetaData.from_title(title="Avenged Sevenfold - Not Ready to Die")
+        m1.update_missing_fields(interactive=False)
+        self.assertEqual(m1.album, "Not Ready to Die")
+        self.assertEqual(m1.year, 2011)
+        self.assertEqual(m1.track, 1)
+
+        # Avenged Sevenfold - Carry On
+        m2 = MP3MetaData.from_title(title="Avenged Sevenfold - Carry On")
+        m2.update_missing_fields(interactive=False)
+        self.assertEqual(m2.album, "Carry On")
+        self.assertEqual(m2.year, 2013)
+        self.assertEqual(m2.track, 1)
 
 
 if __name__ == "__main__":

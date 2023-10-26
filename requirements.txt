@@ -4,3 +4,4 @@ moviepy==1.0.3
 music_tag==0.4.3
 python-decouple==3.8
 colorama==0.4.5
+python-dateutil==2.8.2

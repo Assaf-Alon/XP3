@@ -1,7 +1,7 @@
 """Funtions to extract data from the musicbrainz API, such as an album given a song and a band"""
 import logging
 import sys
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional
 
 import requests
 
@@ -16,7 +16,48 @@ if EMAIL_ADDRESS == "your-mail@mail.com":
     sys.exit(1)
 
 
-def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Tuple[str, int, int]]:
+class ReleaseRecording:
+    """Class that represents a recording in MusicBrainz"""
+
+    def __init__(
+        self,
+        album: str,
+        year: int,
+        artist: str,
+        track: int,
+        r_type: str,
+        title: str = "",
+        status: str = "",
+        album_art_path: str = "",
+    ) -> None:
+        self.album = album
+        self.year = year
+        self.artist = artist
+        self.track = track
+        self.type = r_type.lower()
+        self.title = title
+        self.status = status.lower()
+        self.album_art_path = album_art_path
+
+    def __eq__(self, other):
+        return (
+            self.album == other.album
+            and self.year == other.year
+            and self.artist == other.artist
+            and self.type == other.type
+        )
+
+    def __hash__(self):
+        return hash((self.album, self.artist, self.year))
+
+    def __str__(self):
+        return f"{self.artist} - {self.album}:{self.track} ({self.year}){' SINGLE' if self.type == 'single' else ''}"
+
+    def __repr__(self):
+        return f"{self.artist} - {self.album}:{self.track} ({self.year}){' SINGLE' if self.type == 'single' else ''}"
+
+
+def get_album_candidates(json_data: Any, artist: str, title: str) -> List[ReleaseRecording]:
     """Given MusicBrainz response, returns album candidates
 
     Args:
@@ -25,7 +66,7 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Tuple[
         title (str): Title used for API request
 
     Returns:
-        List[Tuple[str, int, int]]: list of tuples with possible candidates for album track info.
+        List[ReleaseRecording]: List of ReleaseRecording with possible candidates for album track info.
     """
     albums = []
 
@@ -51,11 +92,13 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Tuple[
                     album = release.get("title")
                     year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
                     track = int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
-                    albums.append((album, year, track))
+                    release_type = release.get("release-group", {}).get("primary-type", "")
+                    status = release.get("status", "")
+                    albums.append(ReleaseRecording(album, year, artist, track, release_type, title, status))
     return list(set(albums))
 
 
-def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
+def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
     """Queries musicbrainz.org for candidates (album, year, track number) for the track.
 
     Args:
@@ -63,7 +106,7 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
         title (str): name of the title.
 
     Returns:
-        List[Tuple[str, int, int]]: list of tuples with possible candidates for album track info.
+        List[ReleaseRecording]: List of ReleaseRecording with possible candidates for album track info.
     """
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
@@ -72,10 +115,11 @@ def get_track_info(artist: str, title: str) -> List[Tuple[str, int, int]]:
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     # API request
+    logger.debug("Sending GET request to %s", url)
     response = requests.get(url, headers=headers, timeout=3)
     data = response.json()
 
-    # Extract candidates for: album, year, track
+    # Extract candidates
     return get_album_candidates(data, artist, title)
 
 
@@ -92,6 +136,7 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
     url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
     try:
+        logger.debug("Sending GET request to %s", url)
         response = requests.get(url, headers=headers, timeout=3)
         response.raise_for_status()
         data = response.json()
@@ -118,6 +163,7 @@ def download_album_artwork(artist: str, album: str, filepath: str):
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     try:
+        logger.debug("Sending GET request to %s", url)
         response = requests.get(url, headers, timeout=3)
         if response.status_code == 200:
             with open(filepath, "wb") as file:
@@ -142,7 +188,7 @@ def main():
             break
         print("Invalid choice, choose again")
 
-    download_album_artwork(artist, track_info[index][0], TEST_DOWNLOAD_PATH)
+    download_album_artwork(artist, track_info[index].album, TEST_DOWNLOAD_PATH)
 
 
 if __name__ == "__main__":

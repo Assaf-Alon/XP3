@@ -1,4 +1,5 @@
 """Module providing a class to work with mp3 metadata (MP3MetaData) and related utilities"""
+import datetime
 import logging
 import os
 import re
@@ -9,9 +10,11 @@ from typing import Any, List, Optional, Tuple
 
 import music_tag
 from colorama import Back, Fore
+from dateutil import parser
+from dateutil.parser import ParserError
 
 from config import IMG_DIR, IS_DEBUG
-from music_api import download_album_artwork, get_track_info
+from music_api import ReleaseRecording, download_album_artwork, get_track_info
 
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
@@ -46,6 +49,15 @@ def get_user_input(prompt: str, default: Any) -> str:
         return default
 
     return user_input
+
+
+def extract_date_from_string(string: str) -> Optional[datetime.datetime]:
+    """Returns a date written in a string if exists. Otherwise returns None."""
+    try:
+        date = parser.parse(string, fuzzy=True)
+        return date
+    except ParserError:
+        return None
 
 
 # TODO - Handle DECO here
@@ -161,14 +173,14 @@ def convert_from_filename(filename: str) -> str:
 
 
 # TODO - consider changing this with `pick`
-def print_suggestions(albums: List[Tuple[str, int, int]], artist: str, title: str, suggested_album: int):
-    """Prints the suggestions for album-year-track trios.
+def print_suggestions(recordings: List[ReleaseRecording], artist: str, title: str, suggested_recording: int):
+    """Prints the suggestions recordings.
 
     Args:
-        albums List[str, int, int]: The suggested albums to print
+        recordings List[str, int, int]: The suggested recordings to print
         artist (str): The artist of the track
         title (str): The title of the track
-        suggested_album (int): The default album to choose.
+        suggested_recording (int): The default recording to choose.
     """
     print("--------------------")
     print(f"Choose the correct album for {artist} - {title}:")
@@ -176,41 +188,38 @@ def print_suggestions(albums: List[Tuple[str, int, int]], artist: str, title: st
     print("--------------------")
     print(" 0 : Type metadata manually")
     print("--------------------")
-    for index, album in enumerate(albums):
-        if suggested_album == index:  # Highlight suggested album
+    for index, recording in enumerate(recordings):
+        if suggested_recording == index:  # Highlight suggested album
             print(Fore.BLUE, Back.WHITE, end="")
-        print(f"{index + 1} : {album[0]}")
-        print(f" >> year : {album[1]}, track : {album[2]}" + Fore.RESET + Back.RESET)
+        print(f"{index + 1} : {recording.album}")
+        print(f" >> year : {recording.year}, track : {recording.track}" + Fore.RESET + Back.RESET)
         print("--------------------")
 
 
-def choose_album(albums: List[Tuple[str, int, int]], suggested_album: int) -> Tuple[str, int, int]:
-    """Chooses an album interactivly using user input.
+def choose_recording(recordings: List[ReleaseRecording], suggested_recording: int) -> Optional[ReleaseRecording]:
+    """Chooses a recording interactivly using user input.
 
     Args:
-        albums (List[Tuple[str, int, int]]): List of suggested albums.
-        suggested_album (int): Default index for album from the albums list.
+        recordings (List[ReleaseRecording]): List of suggested recordings.
+        suggested_recording (int): Default index for recording from the recordings list.
 
     Returns:
-        Tuple[str, int, int]: Tuple with chosen album, year, track
+        ReleaseRecording: Chosen Recording
     """
-    album_index = get_user_input("Enter the correct album number", default=suggested_album + 1)
-    album_index = int(album_index)
-    if not albums:
-        albums = [("", 0, 0)]
-    if album_index == -1:
-        return ("", 0, 0)  # No album information needed
-    if album_index == 0:
-        album = get_user_input("Enter album name", default=albums[suggested_album][0])
-        year = get_user_input("Enter album year", default=albums[suggested_album][1])
-        track = get_user_input("Enter album track", default=albums[suggested_album][2])
-    else:
-        album = albums[album_index - 1][0]
-        year = albums[album_index - 1][1]
-        track = albums[album_index - 1][2]
-    year = int(year)
-    track = int(track)
-    return (album, year, track)
+    recording_index = get_user_input("Enter the correct album number", default=suggested_recording + 1)
+    recording_index = int(recording_index)
+    # TODO - validate recording_index
+    if not recordings:
+        return None
+    if recording_index == -1:
+        return None  # No album information needed
+    if recording_index == 0:
+        # TODO - validate input
+        album = get_user_input("Enter album name", default=recordings[suggested_recording].album)
+        year = int(get_user_input("Enter album year", default=recordings[suggested_recording].year))
+        track = int(get_user_input("Enter album track", default=recordings[suggested_recording].track))
+        return ReleaseRecording(album, year, "", track, "")
+    return recordings[recording_index - 1]
 
 
 def get_title_from_path(file_path: str) -> str:
@@ -228,28 +237,67 @@ def get_title_from_path(file_path: str) -> str:
     return file_name_no_extension
 
 
-def get_suggested_album(albums: List[Tuple[str, int, int]]) -> int:
-    """Returns the index of a likely correct album out of the albums list using heurestics.
+def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
+    """Returns the index of a likely correct recording out of the recordings list using heurestics.
 
     Args:
-        albums (List[Tuple[str, int, int]]): List of albums to get suggestion from.
+        recordings (List[ReleaseRecording]): A sorted list (by year) of recordings to get suggestion from.
 
     Returns:
-        int: Index of suggested album, or -1 if there's no suggestion
+        int: Index of suggested recording, or -1 if there's no suggestion
     """
-    suggested_album = -1
-    for album_index, album in enumerate(albums):
+    # TODO - Instead of linear scan, run 'min' with a function, give score according to heuristics
+    # e.g., year > 0 is worth 1000 points
+    #       title contains forbidden works (hits, best), negative 200 points
+    #       single, negative 10 points
+    suggested_recording_index = -1
+    potential_single_index = -1
+    for recording_index, recording in enumerate(recordings):
         # Year is greater then 0
-        if album[1] == 0:
+        if recording.year == 0:
+            logger.debug("Skipping %s because year == 0", recording.album)
             continue
-        if "hits" in album[0].lower():
+        if "hits" in recording.album.lower():
+            logger.debug("Skipping %s because it contains hits", recording.album)
             continue
-        if "live" in album[0].lower():
+        if "live" in recording.album.lower():
+            logger.debug("Skipping %s because it contains live", recording.album)
             continue
-        if album[1] > 0:
-            suggested_album = album_index
+        if "best" in recording.album.lower():
+            logger.debug("Skipping %s because it contains best", recording.album)
+            continue
+
+        date_from_album = extract_date_from_string(recording.album.lower())
+        if date_from_album:
+            logger.debug("Skipping %s because it contains date: %s", recording.album, str(date_from_album))
+            continue
+        if "promotion" in recording.status:
+            logger.debug("Skipping %s because the status is promotional", recording.album)
+            continue
+
+        if recording.type in ("single", "ep"):
+            logger.debug("Skipping %s because it's single/ep", recording.album)
+            if potential_single_index == -1:
+                logger.debug("But remembering it in case there's no good album")
+                potential_single_index = recording_index
+            continue
+        # It's not uncommon for a song to be released as a single, labeled as album for some reason,
+        # and later that year to be released in a proper album.
+        # if (
+        #     recording.title.lower() in recording.album.lower()
+        #     and recording_index + 1 < len(recordings)
+        #     and recordings[recording_index + 1].year == recording.year
+        # ):
+        #     continue
+
+        if recording.year > 0:
+            # Large gap between single and album release, likely that it's more well known as a single
+            if potential_single_index >= 0 and recording.year - recordings[potential_single_index].year >= 2:
+                suggested_recording_index = potential_single_index
+            else:
+                suggested_recording_index = recording_index
             break
-    return suggested_album
+    return suggested_recording_index if suggested_recording_index >= 0 else potential_single_index
 
 
 class MP3MetaData:
@@ -434,29 +482,33 @@ Skip?""",
             if should_use_existing_metadata.lower() == "y":
                 return
 
-        # Get album candidates
+        # Get recording candidates
         artist, title = self.band, self.song
-        albums = get_track_info(artist, title)
+        recordings = get_track_info(artist, title)
 
         # Sort by release year (main), and by length of album (secondary)
-        albums.sort(key=lambda a: (a[1], len(a[0])))
+        recordings.sort(key=lambda recording: (recording.year, len(recording.album)))
 
-        suggested_album = get_suggested_album(albums)
+        suggested_album = get_suggested_recording(recordings)
 
         if not interactive:
-            if not albums:
+            if not recordings:
                 self.album = None
                 self.year = 0
                 self.album = None
                 return
             suggested_album = max(suggested_album, 0)
-            self.album = albums[suggested_album][0]
-            self.year = albums[suggested_album][1]
-            self.track = albums[suggested_album][2]
+            self.album = recordings[suggested_album].album
+            self.year = recordings[suggested_album].year
+            self.track = recordings[suggested_album].track
             return
 
-        print_suggestions(albums, artist, title, suggested_album)
-        self.album, self.year, self.track = choose_album(albums, suggested_album)
+        print_suggestions(recordings, artist, title, suggested_album)
+        chosen_recording = choose_recording(recordings, suggested_album)
+
+        self.album = chosen_recording.album
+        self.year = chosen_recording.year
+        self.track = chosen_recording.track
 
         logger.debug("Album: %s, year: %d, track: %d", self.album, self.year, self.track)
 
