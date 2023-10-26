@@ -48,3 +48,4 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 
 # etc
 - [ ] Tests for weird cases (no album), make sure nothing crashes...
+- [ ] Configure Workflows (Tests run on push)
