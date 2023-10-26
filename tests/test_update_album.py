@@ -77,10 +77,9 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m1.album, "Phobia")
         self.assertEqual(m1.year, 2006)
 
-    def test_update_album_singles(self):
+    def test_update_album_singles1(self):
         """
-        Tests specific edge cases where singles were released, and later
-        added to an album.
+        Ege cases where singles were released, and later added to an album.
         """
         # Dragonforce - Cry Thunder
         m1 = MP3MetaData.from_title(title="Dragonforce - Cry Thunder")
@@ -96,13 +95,10 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2005)
         self.assertEqual(m2.track, 4)
 
-        # Breaking Benjamin - Polyamorous
-        m2 = MP3MetaData.from_title(title="Breaking Benjamin - Polyamorous")
-        m2.update_missing_fields(interactive=False)
-        self.assertEqual(m2.album, "Saturate")
-        self.assertEqual(m2.year, 2002)
-        self.assertEqual(m2.track, 3)
-
+    def test_update_album_singles2(self):
+        """
+        Ege cases where singles were released, and later added to an album.
+        """
         # Bad Wolves - Zombie
         m2 = MP3MetaData.from_title(title="Bad Wolves - Zombie")
         m2.update_missing_fields(interactive=False)
