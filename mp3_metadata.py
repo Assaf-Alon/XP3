@@ -207,7 +207,7 @@ def choose_recording(recordings: List[ReleaseRecording], suggested_recording: in
         year = int(get_user_input("Enter album year", default=recordings[suggested_recording].year))
         track = int(get_user_input("Enter album track", default=recordings[suggested_recording].track))
         return ReleaseRecording(album, year, "", track, "")
-    return ReleaseRecording[recording_index - 1]
+    return recordings[recording_index - 1]
 
 
 def get_title_from_path(file_path: str) -> str:
