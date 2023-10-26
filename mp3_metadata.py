@@ -250,8 +250,8 @@ def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
     # e.g., year > 0 is worth 1000 points
     #       title contains forbidden works (hits, best), negative 200 points
     #       single, negative 10 points
-    suggested_recording = -1
-    potential_single = -1
+    suggested_recording_index = -1
+    potential_single_index = -1
     for recording_index, recording in enumerate(recordings):
         # Year is greater then 0
         if recording.year == 0:
@@ -277,9 +277,9 @@ def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
 
         if recording.type in ("single", "ep"):
             logger.debug("Skipping %s because it's single/ep", recording.album)
-            if potential_single == -1:
+            if potential_single_index == -1:
                 logger.debug("But remembering it in case there's no good album")
-                potential_single = recording_index
+                potential_single_index = recording_index
             continue
         # It's not uncommon for a song to be released as a single, labeled as album for some reason,
         # and later that year to be released in a proper album.
@@ -292,12 +292,12 @@ def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
 
         if recording.year > 0:
             # Large gap between single and album release, likely that it's more well known as a single
-            if potential_single >= 0 and recording.year - recordings[potential_single].year >= 2:
-                suggested_recording = potential_single
+            if potential_single_index >= 0 and recording.year - recordings[potential_single_index].year >= 2:
+                suggested_recording_index = potential_single_index
             else:
-                suggested_recording = recording_index
+                suggested_recording_index = recording_index
             break
-    return suggested_recording if suggested_recording >= 0 else potential_single
+    return suggested_recording_index if suggested_recording_index >= 0 else potential_single_index
 
 
 class MP3MetaData:
