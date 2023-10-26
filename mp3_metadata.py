@@ -1,4 +1,5 @@
 """Module providing a class to work with mp3 metadata (MP3MetaData) and related utilities"""
+import datetime
 import logging
 import os
 import re
@@ -9,6 +10,8 @@ from typing import Any, List, Optional, Tuple
 
 import music_tag
 from colorama import Back, Fore
+from dateutil import parser
+from dateutil.parser import ParserError
 
 from config import IMG_DIR, IS_DEBUG
 from music_api import ReleaseRecording, download_album_artwork, get_track_info
@@ -46,6 +49,15 @@ def get_user_input(prompt: str, default: Any) -> str:
         return default
 
     return user_input
+
+
+def extract_date_from_string(string: str) -> Optional[datetime.datetime]:
+    """Returns a date written in a string if exists. Otherwise returns None."""
+    try:
+        date = parser.parse(string, fuzzy=True)
+        return date
+    except ParserError:
+        return None
 
 
 # TODO - Handle DECO here
@@ -234,30 +246,58 @@ def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
     Returns:
         int: Index of suggested recording, or -1 if there's no suggestion
     """
+    # TODO - Instead of linear scan, run 'min' with a function, give score according to heuristics
+    # e.g., year > 0 is worth 1000 points
+    #       title contains forbidden works (hits, best), negative 200 points
+    #       single, negative 10 points
     suggested_recording = -1
+    potential_single = -1
     for recording_index, recording in enumerate(recordings):
         # Year is greater then 0
         if recording.year == 0:
+            logger.debug("Skipping %s because year == 0", recording.album)
             continue
         if "hits" in recording.album.lower():
+            logger.debug("Skipping %s because it contains hits", recording.album)
             continue
         if "live" in recording.album.lower():
+            logger.debug("Skipping %s because it contains live", recording.album)
             continue
-        if recording.type in ("single", "ep"):
+        if "best" in recording.album.lower():
+            logger.debug("Skipping %s because it contains best", recording.album)
             continue
-        if recording.year > 0:
-            suggested_recording = recording_index
-            break
 
+        date_from_album = extract_date_from_string(recording.album.lower())
+        if date_from_album:
+            logger.debug("Skipping %s because it contains date: %s", recording.album, str(date_from_album))
+            continue
+        if "promotion" in recording.status:
+            logger.debug("Skipping %s because the status is promotional", recording.album)
+            continue
+
+        if recording.type in ("single", "ep"):
+            logger.debug("Skipping %s because it's single/ep", recording.album)
+            if potential_single == -1:
+                logger.debug("But remembering it in case there's no good album")
+                potential_single = recording_index
+            continue
         # It's not uncommon for a song to be released as a single, labeled as album for some reason,
         # and later that year to be released in a proper album.
-        if (
-            recording.album == recording.title
-            and recording_index + 1 < len(recordings)
-            and recordings[recording_index + 1].year == recording.year
-        ):
-            continue
-    return suggested_recording
+        # if (
+        #     recording.title.lower() in recording.album.lower()
+        #     and recording_index + 1 < len(recordings)
+        #     and recordings[recording_index + 1].year == recording.year
+        # ):
+        #     continue
+
+        if recording.year > 0:
+            # Large gap between single and album release, likely that it's more well known as a single
+            if potential_single >= 0 and recording.year - recordings[potential_single].year >= 2:
+                suggested_recording = potential_single
+            else:
+                suggested_recording = recording_index
+            break
+    return suggested_recording if suggested_recording >= 0 else potential_single
 
 
 class MP3MetaData:
