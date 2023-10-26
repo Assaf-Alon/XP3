@@ -20,7 +20,15 @@ class ReleaseRecording:
     """Class that represents a recording in MusicBrainz"""
 
     def __init__(
-        self, album: str, year: int, artist: str, track: int, r_type: str, title: str = None, album_art_path: str = None
+        self,
+        album: str,
+        year: int,
+        artist: str,
+        track: int,
+        r_type: str,
+        title: str = "",
+        status: str = "",
+        album_art_path: str = "",
     ) -> None:
         self.album = album
         self.year = year
@@ -28,6 +36,7 @@ class ReleaseRecording:
         self.track = track
         self.type = r_type.lower()
         self.title = title
+        self.status = status.lower()
         self.album_art_path = album_art_path
 
     def __eq__(self, other):
@@ -84,7 +93,8 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
                     year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
                     track = int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
                     release_type = release.get("release-group", {}).get("primary-type", "")
-                    albums.append(ReleaseRecording(album, year, artist, track, release_type, title))
+                    status = release.get("status", "")
+                    albums.append(ReleaseRecording(album, year, artist, track, release_type, title, status))
     return list(set(albums))
 
 
