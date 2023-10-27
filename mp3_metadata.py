@@ -173,7 +173,12 @@ def convert_from_filename(filename: str) -> str:
 
 
 # TODO - consider changing this with `pick`
-def print_suggestions(recordings: List[ReleaseRecording], artist: str, title: str, suggested_recording: int):
+def print_suggestions(
+    recordings: List[ReleaseRecording],
+    artist: str,
+    title: str,
+    suggested_recording: int,
+):
     """Prints the suggestions recordings.
 
     Args:
@@ -269,7 +274,11 @@ def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
 
         date_from_album = extract_date_from_string(recording.album.lower())
         if date_from_album:
-            logger.debug("Skipping %s because it contains date: %s", recording.album, str(date_from_album))
+            logger.debug(
+                "Skipping %s because it contains date: %s",
+                recording.album,
+                str(date_from_album),
+            )
             continue
         if "promotion" in recording.status:
             logger.debug("Skipping %s because the status is promotional", recording.album)
@@ -308,8 +317,8 @@ class MP3MetaData:
         band: str,
         song: str,
         album: str = "",
-        year: str = "",
-        track: str = "",
+        year: int = 0,
+        track: int = 0,
         genre: str = "",
         art_path: str = "",
         art_configured: bool = False,
@@ -322,6 +331,15 @@ class MP3MetaData:
         self.genre = genre
         self.art_path = art_path
         self.art_configured = art_configured
+
+    @staticmethod
+    def mp3_file_get_as_str(mp3_file: dict, key: str) -> str:
+        """type checker on dict for mp3_file library"""
+        value = mp3_file.get(key)
+        if value is None or not hasattr(value, "value"):
+            return ""
+
+        return str(value.value)
 
     @classmethod
     def from_file(cls, file_path: str, interactive: bool = False):
@@ -341,15 +359,24 @@ class MP3MetaData:
             mp3_file = music_tag.load_file(file_path)
         except Exception:  # pylint: disable=broad-exception-caught
             mp3_file = dict()
+
         album_artwork_path = ""
-        if not mp3_file:
-            song, band, album, year, track, album_art, art_configured = "", "", "", "", "", "", False
+        if not mp3_file or mp3_file is None:
+            song, band, album, year, track, album_art, art_configured = (
+                "",
+                "",
+                "",
+                0,
+                0,
+                "",
+                False,
+            )
         else:
-            song = mp3_file.get("title").value
-            band = mp3_file.get("artist").value
-            album = mp3_file.get("album").value
-            year = mp3_file.get("year").value
-            track = mp3_file.get("tracknumber").value
+            song = cls.mp3_file_get_as_str(mp3_file, "title")
+            band = cls.mp3_file_get_as_str(mp3_file, "artist")
+            album = cls.mp3_file_get_as_str(mp3_file, "album")
+            year = int(cls.mp3_file_get_as_str(mp3_file, "year"))
+            track = int(cls.mp3_file_get_as_str(mp3_file, "tracknumber"))
             album_art = mp3_file.get("artwork")
             art_configured = bool(album_art)
 
@@ -433,7 +460,11 @@ class MP3MetaData:
             return None
 
         grandparent_directory = basename(dirname(parent_directory))
-        return (grandparent_directory, path_match.group("album"), int(path_match.group("year")))
+        return (
+            grandparent_directory,
+            path_match.group("album"),
+            int(path_match.group("year")),
+        )
 
     @property
     def title(self) -> str:
@@ -477,9 +508,10 @@ track = {self.track}
 Skip?""",
                     default="Y",
                 )
+                should_use_existing_metadata = should_use_existing_metadata.lower() == "y"
 
             # TODO - handle user input
-            if should_use_existing_metadata.lower() == "y":
+            if should_use_existing_metadata:
                 return
 
         # Get recording candidates
@@ -493,9 +525,9 @@ Skip?""",
 
         if not interactive:
             if not recordings:
-                self.album = None
+                self.album = ""
                 self.year = 0
-                self.album = None
+                self.track = 0
                 return
             suggested_album = max(suggested_album, 0)
             self.album = recordings[suggested_album].album
@@ -505,10 +537,14 @@ Skip?""",
 
         print_suggestions(recordings, artist, title, suggested_album)
         chosen_recording = choose_recording(recordings, suggested_album)
-
-        self.album = chosen_recording.album
-        self.year = chosen_recording.year
-        self.track = chosen_recording.track
+        if chosen_recording is None:
+            self.album = ""
+            self.year = 0
+            self.track = 0
+        else:
+            self.album = chosen_recording.album
+            self.year = chosen_recording.year
+            self.track = chosen_recording.track
 
         logger.debug("Album: %s, year: %d, track: %d", self.album, self.year, self.track)
 
@@ -585,7 +621,10 @@ Skip?""",
 
 
 def update_metadata_for_directory(
-    base_path: str, interactive: bool = True, update_album_art: bool = False, recursive: bool = False
+    base_path: str,
+    interactive: bool = True,
+    update_album_art: bool = False,
+    recursive: bool = False,
 ):
     """Updates mp3 metadata of files in a directory.
 
@@ -608,4 +647,4 @@ def update_metadata_for_directory(
 
         if update_album_art:
             metadata.update_album_art()
-        metadata.apply_on_file(file_path=path.absolute())
+        metadata.apply_on_file(file_path=str(path.absolute()))
