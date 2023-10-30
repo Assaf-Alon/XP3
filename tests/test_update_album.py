@@ -62,7 +62,7 @@ class TestUpdateAlbum(unittest.TestCase):
     @patch(target="music_api.download_album_artwork")
     def test_update_image1(self, mock_download_album_artwork):
         """Tests the update_album_art method"""
-        mock_download_album_artwork.new_callable = utils.mock_rise_against_artwork_downloader
+        mock_download_album_artwork.side_effect = utils.mock_rise_against_artwork_downloader
 
         m1 = MP3MetaData.from_video(title="Rise Against - Audience of One")
         m1.update_missing_fields(interactive=False)
