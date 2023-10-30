@@ -4,7 +4,7 @@ import os
 import unittest
 
 from config import TMP_DIR
-from mp3 import download_ytvid, get_playlist_songs
+from mp3_download import download_ytvid, get_playlist_songs
 
 
 class TestDownloadSong(unittest.TestCase):
