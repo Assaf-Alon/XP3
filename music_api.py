@@ -125,7 +125,7 @@ def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
         if data.get("created"):
             del data["created"]
         dirname = dirname = os.path.dirname(__file__)
-        json_path = os.path.join(dirname, "tests", "outputs", "json", f"{artist} - {title}.json")
+        json_path = os.path.join(dirname, "tests", "outputs", "json", f"{artist} - {title}.json".lower())
         with open(json_path, "w", encoding="utf-8") as json_file:
             json.dump(data, json_file)
 

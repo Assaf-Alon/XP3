@@ -31,7 +31,7 @@ def mock_rise_against_artwork_downloader():
     shutil.copyfile(src=png_path, dst=target_path)
 
 
-def mocked_requests_get(*args):
+def mocked_requests_get(*args, **kwargs):
     """Used for testing to avoid API calls"""
 
     class MockResponse:
@@ -55,7 +55,7 @@ def mocked_requests_get(*args):
     title = url_match.group("title")
 
     dirname = os.path.dirname(__file__)
-    json_path = os.path.join(dirname, "outputs", "json", f"{artist} - {title}.json")
+    json_path = os.path.join(dirname, "outputs", "json", f"{artist} - {title}.json".lower())
     with open(json_path, "r", encoding="utf-8") as file:
         data = json.loads(file.read())
     return MockResponse(data, 200)
