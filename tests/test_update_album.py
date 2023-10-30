@@ -17,11 +17,12 @@ class TestUpdateAlbum(unittest.TestCase):
     bb_path = join(TMP_DIR, "Breaking Benjamin")
     song_path = join(join(bb_path, "Phobia (2006)"), "Breaking Benjamin - The Diary of Jane.mp3")
 
-    def setUp(self):
+    @patch(target="requests.get")
+    def setUp(self, mocked_request):  # pylint: disable=arguments-differ
         """Creates files for testing purposes"""
         os.makedirs(dirname(self.song_path))
         open(self.song_path, "x", encoding="utf-8").close()  # pylint: disable=consider-using-with
-
+        mocked_request.requests.get.side_effect = utils.mocked_requests_get
         return super().setUp()
 
     def tearDown(self) -> None:
@@ -30,8 +31,7 @@ class TestUpdateAlbum(unittest.TestCase):
 
         return super().tearDown()
 
-    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
-    def test_update_album1(self, mocked_requests):
+    def test_update_album1(self):
         """Tests the update_missing_fields method"""
         m1 = MP3MetaData.from_title(title="Skillet - Dominion")
         m1.update_missing_fields(interactive=False)
@@ -45,8 +45,7 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2020)
         self.assertEqual(m2.track, 2)
 
-    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
-    def test_update_album2(self, mocked_requests):
+    def test_update_album2(self):
         """Tests the update_missing_fields method"""
         m1 = MP3MetaData.from_title("Smash Into Pieces-All Eyes on You")
         m1.update_missing_fields(interactive=False)
@@ -60,9 +59,11 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2020)
         self.assertEqual(m2.track, 5)
 
-    @patch(target="music_api.download_album_artwork", new_callable=utils.mock_rise_against_artwork_downloader)
+    @patch(target="music_api.download_album_artwork")
     def test_update_image1(self, mock_download_album_artwork):
         """Tests the update_album_art method"""
+        mock_download_album_artwork.new_callable = utils.mock_rise_against_artwork_downloader
+
         m1 = MP3MetaData.from_video(title="Rise Against - Audience of One")
         m1.update_missing_fields(interactive=False)
         self.assertEqual(m1.album, "Appeal to Reason")
@@ -75,8 +76,7 @@ class TestUpdateAlbum(unittest.TestCase):
 
         os.remove(m1.art_path)
 
-    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
-    def test_from_file1(self, mocked_requests):
+    def test_from_file1(self):
         """Tests MP3MetaData.from_file(...)"""
         m1 = MP3MetaData.from_file(file_path=self.song_path)
         self.assertEqual(m1.band, "Breaking Benjamin")
@@ -84,8 +84,7 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m1.album, "Phobia")
         self.assertEqual(m1.year, 2006)
 
-    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
-    def test_update_album_singles1(self, mocked_requests):
+    def test_update_album_singles1(self):
         """
         Edge cases where singles were released, and later added to an album.
         """
@@ -110,8 +109,7 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2018)
         self.assertEqual(m2.track, 4)
 
-    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
-    def test_update_album_singles2(self, mocked_requests):
+    def test_update_album_singles2(self):
         """
         Actual singles that were release as singles, and should be treated as such
         """

@@ -29,7 +29,7 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] User interaction file (get_user_input, convert n/y to booleans and such...)
 - [ ] Configure language for artists (e.g. DECO*27), and if English doesn't work for them (0 results from query) try translating (e.g. mannequin translates correctly https://musicbrainz.org/release-group/4710e0e0-e417-45b4-9cf3-7a9f22c69174. Also make sure Ilay Botner works https://musicbrainz.org/artist/f958a500-5111-4f8b-abd2-9b7f37f18179/recordings)
 - [ ] Handle "BAND - Topic" channel name
-- [ ] 
+- [ ] env var dev / prod
 
 # Tests
 - [x] Test mp4 download  

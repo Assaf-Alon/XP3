@@ -23,20 +23,26 @@ def get_file_md5_hash(filepath: str) -> str:
     return file_md5
 
 
-def mock_rise_against_artwork_downloader(band: str = "", name_for_art: str = "", filepath: str = ""):
+def mock_rise_against_artwork_downloader():
+    """Fakes the process of downloading an album image for Rise Against"""
     dirname = os.path.dirname(__file__)
     png_path = os.path.join(dirname, "outputs", "img", "Rise Against - Appeal to Reason.png")
     target_path = os.path.join(TMP_DIR, "Rise Against - Appeal to Reason.png")
     shutil.copyfile(src=png_path, dst=target_path)
 
 
-def mocked_requests_get(*args, **kwargs):
+def mocked_requests_get(*args):
+    """Used for testing to avoid API calls"""
+
     class MockResponse:
+        """Mocked class of a json response"""
+
         def __init__(self, json_data, status_code):
             self.json_data = json_data
             self.status_code = status_code
 
         def json(self):
+            """json..."""
             return self.json_data
 
     url = args[0]
