@@ -9,13 +9,13 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [x] Fix pylint issues (pylint $(git ls-files '*.py'))
 - [x] Create a ReleaseRecording class instead of using 3-tuple.
 - [x] Add Docstrings to functions
+- [x] Add `get_album_artwork_path` function (handle cases of singles and such)  
 - [ ] Fix pylint low prio issues (C0103,W0511,R0902,R0913,E0611)
 - [ ] Catch errors on relevant operations (try except)  
 - [ ] Raise errors instead of assert  
 - [ ] Change pick  
 - [ ] Special cases for artists (eg. DECO*27) - to dictionary instead of convert_[to/from]  _filename
 - [ ] Special cases for title strings (strings_to_remove) - to dictionary  
-- [ ] Add `get_artwork_path` function (handle cases of singles and such)  
 
 # Upgrades
 - [x] When updating files, try to read existing metadata and suggest to use it (to just update the album artwork)  
