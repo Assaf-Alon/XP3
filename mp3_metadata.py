@@ -562,7 +562,7 @@ Skip?""",
         if not isfile(album_artwork_path):
             download_album_artwork(self.band, name_for_art, filepath=album_artwork_path)
 
-        # Making sure the file does exist (in case download has failed)
+        # Make sure the file does exist (in case the download has failed)
         if isfile(album_artwork_path):
             self.art_path = album_artwork_path
 

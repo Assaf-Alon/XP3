@@ -3,8 +3,9 @@ import os
 import shutil
 import unittest
 from os.path import dirname, join
+from unittest.mock import patch
 
-from utils import get_file_md5_hash
+import utils
 
 from config import TMP_DIR
 from mp3_metadata import MP3MetaData
@@ -55,7 +56,8 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2020)
         self.assertEqual(m2.track, 5)
 
-    def test_update_image1(self):
+    @patch(target="music_api.download_album_artwork", new_callable=utils.mock_rise_against_artwork_downloader)
+    def test_update_image1(self, mock_download_album_artwork):
         """Tests the update_album_art method"""
         m1 = MP3MetaData.from_video(title="Rise Against - Audience of One")
         m1.update_missing_fields(interactive=False)
@@ -65,7 +67,7 @@ class TestUpdateAlbum(unittest.TestCase):
 
         m1.update_album_art()
         self.assertTrue(os.path.isfile(m1.art_path))
-        self.assertEqual(get_file_md5_hash(m1.art_path), "52a26502a8073d857e1d147b52efc455")
+        self.assertEqual(utils.get_file_md5_hash(m1.art_path), "52a26502a8073d857e1d147b52efc455")
 
         os.remove(m1.art_path)
 
