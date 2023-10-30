@@ -120,7 +120,10 @@ def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
     logger.debug("Sending GET request to %s", url)
     response = requests.get(url, headers=headers, timeout=3)
     data = response.json()
+    # TODO - if env is dev / prod
     if IS_DEBUG:
+        if data.get("created"):
+            del data["created"]
         dirname = dirname = os.path.dirname(__file__)
         json_path = os.path.join(dirname, "tests", "outputs", "json", f"{artist} - {title}.json")
         with open(json_path, "w") as json_file:

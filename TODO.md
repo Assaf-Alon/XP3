@@ -40,7 +40,9 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Test extract_album_info_from_path 
 - [ ] Test from_file (with paths such as `ARTIST/ALBUM (YEAR)`) 
 - [ ] https://stackoverflow.com/questions/60837213/how-to-run-test-case-marked-unittest-skip-in-python
-- [ ] Convert unittest to pytest
+- [ ] Convert unittest to pytest  
+- [ ] Check possibility to move patch to class level  
+- [ ] Automate tests from existing files with verified metadata  
 
 # Feature Requests
 - [ ] Filter out 'Greatest Hits'  

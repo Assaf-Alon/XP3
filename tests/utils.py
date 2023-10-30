@@ -2,11 +2,10 @@
 import hashlib
 import json
 import os
+import re
 import shutil
-from typing import List
 
 from config import TMP_DIR
-from music_api import ReleaseRecording, get_album_candidates
 
 
 def get_file_md5_hash(filepath: str) -> str:
@@ -31,14 +30,26 @@ def mock_rise_against_artwork_downloader(band: str = "", name_for_art: str = "",
     shutil.copyfile(src=png_path, dst=target_path)
 
 
-def mock_get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
-    """
-    Mock function of music_api.get_track_info that loads json from local path
-    instead of getting it from the MusicBrainz API
-    """
+def mocked_requests_get(*args, **kwargs):
+    class MockResponse:
+        def __init__(self, json_data, status_code):
+            self.json_data = json_data
+            self.status_code = status_code
+
+        def json(self):
+            return self.json_data
+
+    url = args[0]
+    url_match = re.match(r".*artist:(?P<artist>.+) AND recording:(?P<title>.*)&fmt=json", url)
+
+    if not url_match:
+        raise ValueError(f"URL not in the right format: {url}")
+
+    artist = url_match.group("artist")
+    title = url_match.group("title")
+
     dirname = os.path.dirname(__file__)
     json_path = os.path.join(dirname, "outputs", "json", f"{artist} - {title}.json")
-    data = json.load(json_path)
-
-    # Extract candidates
-    return get_album_candidates(data, artist, title)
+    with open(json_path, "r", encoding="utf-8") as file:
+        data = json.loads(file.read())
+    return MockResponse(data, 200)
