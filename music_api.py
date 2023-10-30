@@ -1,5 +1,7 @@
 """Funtions to extract data from the musicbrainz API, such as an album given a song and a band"""
+import json
 import logging
+import os
 import sys
 from typing import Any, List, Optional
 
@@ -118,6 +120,11 @@ def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
     logger.debug("Sending GET request to %s", url)
     response = requests.get(url, headers=headers, timeout=3)
     data = response.json()
+    if IS_DEBUG:
+        dirname = dirname = os.path.dirname(__file__)
+        json_path = os.path.join(dirname, "tests", "outputs", "json", f"{artist} - {title}.json")
+        with open(json_path, "w") as json_file:
+            json.dump(data, json_file)
 
     # Extract candidates
     return get_album_candidates(data, artist, title)

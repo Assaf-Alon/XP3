@@ -11,6 +11,7 @@ from config import TMP_DIR
 from mp3_metadata import MP3MetaData
 
 
+@patch(target="music_api.get_track_info", side_effect=utils.mock_get_track_info)
 class TestUpdateAlbum(unittest.TestCase):
     """Class for testing album information update on creation of MP3MetaData"""
 
@@ -21,11 +22,18 @@ class TestUpdateAlbum(unittest.TestCase):
         """Creates files for testing purposes"""
         os.makedirs(dirname(self.song_path))
         open(self.song_path, "x", encoding="utf-8").close()  # pylint: disable=consider-using-with
+
+        # self.mock_get_track_info = patch("music_api.get_track_info", side_effect=utils.mock_get_track_info)
+        # self.mock_get_track_info.start()
+
         return super().setUp()
 
     def tearDown(self) -> None:
         """Removes files created for testing purposes"""
         shutil.rmtree(self.bb_path, ignore_errors=True)
+
+        # self.mock_get_track_info.stop()
+
         return super().tearDown()
 
     def test_update_album1(self):
