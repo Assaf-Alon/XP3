@@ -51,7 +51,7 @@ class TestFixTitle(unittest.TestCase):
         )
         self.assertEqual(m3.title, "Journey - Don't Stop Believin'")
 
-    def test_fix_title_hyphen(self):
+    def test_fix_title_channel1(self):
         """Tests that title was created correctly with band implicitly stated in the channel"""
         m1 = MP3MetaData.from_video(
             title="Six Feet Under",
@@ -61,6 +61,14 @@ class TestFixTitle(unittest.TestCase):
 
         m2 = MP3MetaData.from_video("Smash Into Pieces - Six Feet Under")
         self.assertEqual(m2.title, "Smash Into Pieces - Six Feet Under")
+
+    def test_fix_title_channel2(self):
+        """Tests that title was created correctly with band implicitly stated in the channel"""
+        m1 = MP3MetaData.from_video(
+            title="Castaway",
+            channel="Chasen - Topic",
+        )
+        self.assertEqual(m1.title, "Chasen - Castaway")
 
     def test_fix_title_strings_to_remove(self):
         """Tests that on initialization, the title removes specific strings"""
