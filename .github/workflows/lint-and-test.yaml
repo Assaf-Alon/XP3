@@ -1,10 +1,15 @@
-name: Pylint
+name: Lint and Test
 
 on: [push, pull_request]
 
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+    env:
+      MP3_DIR: /tmp/mp3
+      MP4_DIR: /tmp/mp4
+      IMG_DIR: /tmp/img
+      TMP_DIR: /tmp/tmp
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11"]
