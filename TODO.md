@@ -43,6 +43,7 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] https://stackoverflow.com/questions/60837213/how-to-run-test-case-marked-unittest-skip-in-python
 - [ ] Convert unittest to pytest  
 - [ ] Check possibility to move patch to class level  
+- [ ] Test interactive parts  
 - [ ] Automate tests from existing files with verified metadata  
 
 # Feature Requests

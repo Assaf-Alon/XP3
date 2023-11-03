@@ -84,17 +84,17 @@ def get_title_suggestion(
         suggested_title = suggested_title.replace(s, "")
     suggested_title = suggested_title.strip()
 
-    should_update_title = "Y"
+    should_update_title = True
     if interactive and suggested_title != title:
         print("\n------------------------------")
         print("About to update title of song.")
         print(f"Original  title: {title}")
         print("Suggested title: " + Fore.BLUE + Back.WHITE + suggested_title + Fore.RESET + Back.RESET)
 
-        should_update_title = get_user_input("Should use suggestion?", "Y")
+        should_update_title = get_user_input("Should use suggestion?", True)
 
     # Don't use suggestion, type manually
-    if should_update_title.lower() != "y":
+    if should_update_title is False:
         suggested_title = get_user_input("Enter the name of the title manually", title)
 
     # Update fields
@@ -438,11 +438,9 @@ album = {self.album}
 year = {self.year}
 track = {self.track}
 Skip?""",
-                    default="Y",
+                    default=True,
                 )
-                should_use_existing_metadata = should_use_existing_metadata.lower() == "y"
 
-            # TODO - handle user input
             if should_use_existing_metadata:
                 return
 

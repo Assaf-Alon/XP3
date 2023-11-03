@@ -1,3 +1,4 @@
+"""Functions for interaction with users, such as get_user_input"""
 from typing import Any, List, Optional
 
 from colorama import Back, Fore
@@ -19,18 +20,25 @@ def get_user_input(prompt: str, default: Any) -> str:
         prompt = prompt[:-1]
     prompt = prompt.strip()
     if default:
-        if str(default).lower() == "y":
+        if str(default).lower() == "true":
             prompt = f"{prompt} [Y/n]"
-        elif str(default).lower() == "n":
+        elif str(default).lower() == "false":
             prompt = f"{prompt} [y/N]"
         else:
             prompt = f"{prompt} [{default}]"
     user_input = input(prompt + ": ")
 
-    if not user_input and default:
+    if not user_input:
         return default
+    chosen_option = user_input
 
-    return user_input
+    # Convert to booleans
+    if chosen_option.lower() in ("y", "yes"):
+        chosen_option = True
+    if chosen_option.lower() in ("n", "no"):
+        chosen_option = False
+
+    return chosen_option
 
 
 # TODO - consider changing this with `pick`
@@ -72,17 +80,30 @@ def choose_recording(recordings: List[ReleaseRecording], suggested_recording: in
     Returns:
         ReleaseRecording: Chosen Recording
     """
-    recording_index = get_user_input("Enter the correct album number", default=suggested_recording + 1)
-    recording_index = int(recording_index)
-    # TODO - validate recording_index
-    if not recordings:
-        return None
+
+    recording_index = None
+    while not isinstance(recording_index, int):
+        recording_index = get_user_input("Enter the correct album number", default=suggested_recording + 1)
+        try:
+            recording_index = int(recording_index)
+        except ValueError:
+            print(f"Failed to convert {recording_index} to an int. Please try again.")
+
+    # No album information needed
     if recording_index == -1:
-        return None  # No album information needed
+        return None
+
+    # Manually enter the album information
     if recording_index == 0:
-        # TODO - validate input
-        album = get_user_input("Enter album name", default=recordings[suggested_recording].album)
-        year = int(get_user_input("Enter album year", default=recordings[suggested_recording].year))
-        track = int(get_user_input("Enter album track", default=recordings[suggested_recording].track))
+        is_info_valid = False
+        while not is_info_valid:
+            try:
+                album = get_user_input("Enter album name", default=recordings[suggested_recording].album)
+                year = int(get_user_input("Enter album year", default=recordings[suggested_recording].year))
+                track = int(get_user_input("Enter album track", default=recordings[suggested_recording].track))
+                is_info_valid = True
+            except ValueError:
+                print("Invalid input. Please try again.")
+
         return ReleaseRecording(album, year, "", track, "")
     return recordings[recording_index - 1]
