@@ -3,8 +3,9 @@ import os
 import shutil
 import unittest
 from os.path import dirname, join
+from unittest.mock import patch
 
-from utils import get_file_md5_hash
+import utils
 
 from config import TMP_DIR
 from mp3_metadata import MP3MetaData
@@ -20,14 +21,17 @@ class TestUpdateAlbum(unittest.TestCase):
         """Creates files for testing purposes"""
         os.makedirs(dirname(self.song_path))
         open(self.song_path, "x", encoding="utf-8").close()  # pylint: disable=consider-using-with
+
         return super().setUp()
 
     def tearDown(self) -> None:
         """Removes files created for testing purposes"""
         shutil.rmtree(self.bb_path, ignore_errors=True)
+
         return super().tearDown()
 
-    def test_update_album1(self):
+    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
+    def test_update_album1(self, mocked_requests):
         """Tests the update_missing_fields method"""
         m1 = MP3MetaData.from_title(title="Skillet - Dominion")
         m1.update_missing_fields(interactive=False)
@@ -41,7 +45,8 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2020)
         self.assertEqual(m2.track, 2)
 
-    def test_update_album2(self):
+    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
+    def test_update_album2(self, mocked_requests):
         """Tests the update_missing_fields method"""
         m1 = MP3MetaData.from_title("Smash Into Pieces-All Eyes on You")
         m1.update_missing_fields(interactive=False)
@@ -55,7 +60,8 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2020)
         self.assertEqual(m2.track, 5)
 
-    def test_update_image1(self):
+    @patch(target="music_api.download_album_artwork", new_callable=utils.mock_rise_against_artwork_downloader)
+    def test_update_image1(self, mock_download_album_artwork):
         """Tests the update_album_art method"""
         m1 = MP3MetaData.from_video(title="Rise Against - Audience of One")
         m1.update_missing_fields(interactive=False)
@@ -65,11 +71,12 @@ class TestUpdateAlbum(unittest.TestCase):
 
         m1.update_album_art()
         self.assertTrue(os.path.isfile(m1.art_path))
-        self.assertEqual(get_file_md5_hash(m1.art_path), "52a26502a8073d857e1d147b52efc455")
+        self.assertEqual(utils.get_file_md5_hash(m1.art_path), "52a26502a8073d857e1d147b52efc455")
 
         os.remove(m1.art_path)
 
-    def test_from_file1(self):
+    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
+    def test_from_file1(self, mocked_requests):
         """Tests MP3MetaData.from_file(...)"""
         m1 = MP3MetaData.from_file(file_path=self.song_path)
         self.assertEqual(m1.band, "Breaking Benjamin")
@@ -77,7 +84,8 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m1.album, "Phobia")
         self.assertEqual(m1.year, 2006)
 
-    def test_update_album_singles1(self):
+    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
+    def test_update_album_singles1(self, mocked_requests):
         """
         Edge cases where singles were released, and later added to an album.
         """
@@ -102,7 +110,8 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2018)
         self.assertEqual(m2.track, 4)
 
-    def test_update_album_singles2(self):
+    @patch(target="requests.get", side_effect=utils.mocked_requests_get)
+    def test_update_album_singles2(self, mocked_requests):
         """
         Actual singles that were release as singles, and should be treated as such
         """

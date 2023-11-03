@@ -104,6 +104,7 @@ def get_title_suggestion(
 
     # Attempt to patch with channel name if possible
     elif channel:
+        channel = channel.replace(" - Topic", "")
         suggested_title = channel + " - " + suggested_title
 
     for s in STRINGS_TO_REMOVE:
@@ -199,6 +200,18 @@ def print_suggestions(
         print(f"{index + 1} : {recording.album}")
         print(f" >> year : {recording.year}, track : {recording.track}" + Fore.RESET + Back.RESET)
         print("--------------------")
+
+
+def get_album_artwork_path(band: str, song: str, album: str = "") -> Tuple[str, str]:
+    """Gets path for the album artwork image.
+    If it exists, the album will be used. Otherwise, the song will be used.
+
+    Returns:
+        Tuple[str, str]: First element is the path. Second element is the album, or song if there's no album.
+    """
+    name_for_art = album if album else song
+    album_artwork_path = join(IMG_DIR, f"{band} - {name_for_art}.png")
+    return album_artwork_path, name_for_art
 
 
 def choose_recording(recordings: List[ReleaseRecording], suggested_recording: int) -> Optional[ReleaseRecording]:
@@ -394,9 +407,7 @@ class MP3MetaData:
 
         # Attempt patching album art
         if album_art:
-            # TODO - use function get_artwork_path
-            name_for_art = album if album else song
-            album_artwork_path = join(IMG_DIR, f"{band} - {name_for_art}.png")
+            album_artwork_path, _ = get_album_artwork_path(band, song, album)
 
             # Extract image if it's not in the IMG DIR
             if not isfile(album_artwork_path):
@@ -470,13 +481,6 @@ class MP3MetaData:
     def title(self) -> str:
         """Get title (band - song)"""
         return self.band + " - " + self.song
-
-    @title.setter
-    def title(self, value: str):
-        """Updates title"""
-        # TODO - think what to do in more complex cases. Can I assume the artist doesn't have '-'?
-        assert value.count(" - ") == 1
-        self.band, self.song = value.split(" - ")
 
     def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
         """Updates missing mp3 metadata fields.
@@ -556,13 +560,12 @@ Skip?""",
         if not (self.album or self.song):
             return
 
-        name_for_art = self.album if self.album else self.song
-        album_artwork_path = join(IMG_DIR, f"{self.band} - {name_for_art}.png")
+        album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
 
         if not isfile(album_artwork_path):
             download_album_artwork(self.band, name_for_art, filepath=album_artwork_path)
 
-        # Making sure the file does exist (in case download has failed)
+        # Make sure the file does exist (in case the download has failed)
         if isfile(album_artwork_path):
             self.art_path = album_artwork_path
 
