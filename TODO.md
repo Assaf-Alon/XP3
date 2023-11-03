@@ -24,10 +24,10 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [x] GitHub workflow for testing and linting
 - [x] Handle "BAND - Topic" channel name
 - [x] Add default to mp3_dir and mp4_dir, and in the program workflow check if it exists and create it it doesnt
+- [x] User interaction file (get_user_input, convert n/y to booleans and such...)
 - [ ] Address API Scheme to improve query (be able to get data for Linkin Park - Papercut (album = Hybrid Theory) and Foo Fighters - I'll Stick Around (album = Foo Fighters)). Main issue stems from the fact that these songs were first released as singles.
 - [ ] Check if can swap band and song [Papercut - Linkin Park] (via API calls?)  
 - [ ] Add more logging (debug)
-- [ ] User interaction file (get_user_input, convert n/y to booleans and such...)
 - [ ] Configure language for artists (e.g. DECO*27), and if English doesn't work for them (0 results from query) try translating (e.g. mannequin translates correctly https://musicbrainz.org/release-group/4710e0e0-e417-45b4-9cf3-7a9f22c69174. Also make sure Ilay Botner works https://musicbrainz.org/artist/f958a500-5111-4f8b-abd2-9b7f37f18179/recordings)
 - [ ] Handle "BAND - Topic" channel name
 - [ ] env var dev / prod
