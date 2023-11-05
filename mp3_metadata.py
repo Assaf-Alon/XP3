@@ -4,7 +4,7 @@ import logging
 import os
 import re
 import sys
-from os.path import basename, dirname, isfile, join
+from os.path import basename, dirname, isfile
 from pathlib import Path
 from typing import List, Optional, Tuple
 

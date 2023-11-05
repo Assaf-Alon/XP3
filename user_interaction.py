@@ -95,10 +95,10 @@ def choose_recording(recordings: List[ReleaseRecording], suggested_recording_ind
         try:
             recording_index = int(recording_index)
         except ValueError:
-            logger.error(f"Failed to convert input '{recording_index}' to an int. Please try again.")
+            logger.error("Failed to convert input '%d' to an int. Please try again.", recording_index)
             recording_index = ""
         if not -1 <= recording_index <= len(recordings):
-            logger.error(f"Index {recording_index} out of range. Recording length: {len(recordings)}")
+            logger.error("Index %d out of range. Recording length: %d", recording_index, len(recordings))
             recording_index = ""
 
     # No album information needed

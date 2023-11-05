@@ -3,11 +3,10 @@
 
 import json
 import os
-import re
 from os.path import join
-from typing import Dict, Tuple
+from typing import Tuple
 
-from config import IMG_DIR, PATTERN_ILLEGAL_CHARS
+from config import IMG_DIR
 
 
 def convert_to_filename(fullTitle: str) -> str:
@@ -44,6 +43,13 @@ def convert_from_filename(filename: str) -> str:
 
 
 def save_response_as_json(data: dict, artist: str, title: str):
+    """Saves a response from MusicBrainz API to a json file.
+
+    Args:
+        data (dict): The data itself.
+        artist (str): The artist name that was used in the request.
+        title (str): The title that was used in the request.
+    """
     dirname = dirname = os.path.dirname(__file__)
     filename = f"{artist} - {title}.json".lower().replace("*", "_")
     json_path = os.path.join(dirname, "tests", "outputs", "json", filename)
@@ -52,6 +58,10 @@ def save_response_as_json(data: dict, artist: str, title: str):
 
 
 def load_json_response(artist: str, title: str) -> dict:
+    """Loads a saved response associated with a given artist and title
+
+    Returns: The saved data associated with the given artist and title.
+    """
     dirname = dirname = os.path.dirname(__file__)
     filename = f"{artist} - {title}.json".lower().replace("*", "_")
     json_path = os.path.join(dirname, "tests", "outputs", "json", filename)
