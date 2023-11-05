@@ -78,12 +78,15 @@ def print_suggestions(
         print("--------------------")
 
 
-def choose_recording(recordings: List[ReleaseRecording], suggested_recording_index: int) -> Optional[ReleaseRecording]:
+def choose_recording(
+    recordings: List[ReleaseRecording], suggested_recording_index: int, title: str = ""
+) -> Optional[ReleaseRecording]:
     """Chooses a recording interactivly using user input.
 
     Args:
         recordings (List[ReleaseRecording]): List of suggested recordings.
         suggested_recording_index (int): Default index for recording from the recordings list.
+        title (str, optional): Used for suggestion of album if there's no recording available
 
     Returns:
         ReleaseRecording: Chosen Recording
@@ -116,16 +119,16 @@ def choose_recording(recordings: List[ReleaseRecording], suggested_recording_ind
             )
             if recordings
             else (
+                title,
                 None,
-                None,
-                None,
+                1,
             )
         )
         while not is_info_valid:
             try:
                 album = get_user_input("Enter album name", default=defaults[0])
                 year = int(get_user_input("Enter album year", default=defaults[1]))
-                track = int(get_user_input("Enter album track", default=defaults[1]))
+                track = int(get_user_input("Enter album track", default=defaults[2]))
                 is_info_valid = True
             except ValueError:
                 print("Invalid input. Please try again.")

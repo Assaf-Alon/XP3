@@ -149,9 +149,12 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
         response.raise_for_status()
         data = response.json()
         if "releases" in data and data["releases"]:
-            release = data["releases"][0]
-            if "release-group" in release:
-                return release["release-group"]["id"]
+            releases = data["releases"]
+            for release in releases:
+                if "release-group" in release and album.lower() == release["release-group"]["title"].lower():
+                    logger.debug(" > Found release group")
+                    return release["release-group"]["id"]
+        logger.debug(" > Haven't found release group")
         return None
     except requests.exceptions.RequestException as err:
         logger.error("An error occurred: %s", err)
@@ -167,6 +170,10 @@ def download_album_artwork(artist: str, album: str, filepath: str):
         filepath (str): path for the outputed image file
     """
     release_group_id = get_release_group_id(artist, album)
+    print(release_group_id)
+    if release_group_id is None:
+        logger.debug("Couldn't find release group for '%s - %s', aborting album art download", artist, album)
+        return
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 

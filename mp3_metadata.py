@@ -416,7 +416,7 @@ Skip?""",
             self.update_fields_from_recording(recordings[suggested_album_index])
             return
         print_suggestions(recordings, artist, title, suggested_album_index)
-        chosen_recording = choose_recording(recordings, suggested_album_index)
+        chosen_recording = choose_recording(recordings, suggested_album_index, title)
         if chosen_recording is not None:
             self.update_fields_from_recording(chosen_recording)
 

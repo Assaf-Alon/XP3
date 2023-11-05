@@ -51,7 +51,7 @@ def save_response_as_json(data: dict, artist: str, title: str):
         title (str): The title that was used in the request.
     """
     dirname = dirname = os.path.dirname(__file__)
-    filename = f"{artist} - {title}.json".lower().replace("*", "_")
+    filename = f"{artist} - {title}.json".lower().replace("*", "_").replace("/", "_").replace("\\", "_")
     json_path = os.path.join(dirname, "tests", "outputs", "json", filename)
     with open(json_path, "w", encoding="utf-8") as json_file:
         json.dump(data, json_file)
@@ -63,7 +63,7 @@ def load_json_response(artist: str, title: str) -> dict:
     Returns: The saved data associated with the given artist and title.
     """
     dirname = dirname = os.path.dirname(__file__)
-    filename = f"{artist} - {title}.json".lower().replace("*", "_")
+    filename = f"{artist} - {title}.json".lower().replace("*", "_").replace("/", "_").replace("\\", "_")
     json_path = os.path.join(dirname, "tests", "outputs", "json", filename)
     with open(json_path, "r", encoding="utf-8") as file:
         data = json.loads(file.read())
