@@ -13,14 +13,16 @@ from colorama import Back, Fore
 from dateutil import parser
 from dateutil.parser import ParserError
 
-from config import IMG_DIR, IS_DEBUG
+from config import IS_DEBUG, PATTERN_ILLEGAL_CHARS
+from file_operations import get_album_artwork_path
 from music_api import ReleaseRecording, download_album_artwork, get_track_info
 from user_interaction import choose_recording, get_user_input, print_suggestions
 
+logging.basicConfig()
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
-PATTERN_ILLEGAL_CHARS = r'[\\/:*?"<>|]'
+
 STRINGS_TO_REMOVE = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"]
 
 
@@ -110,52 +112,6 @@ def get_title_suggestion(
     band = band.strip()
     song = song.strip()
     return band, song
-
-
-# TODO - Isn't used anywhere atm.
-def convert_to_filename(title: str) -> str:
-    """Converts title to a file name.
-       Used to handle edge cases where the title contains illegal file characters.
-
-    Args:
-        title (str): The title.
-
-    Returns:
-        str: The file name.
-    """
-    band, song = title.split(" - ")
-    if band.startswith("DECO"):
-        return "DECO*27" + " - " + song
-    return title
-
-
-# TODO - Isn't used anywhere atm.
-def convert_from_filename(filename: str) -> str:
-    """Converts filename to a title.
-       Used to handle edge cases where the title contains illegal file characters.
-
-    Args:
-        title (str): The file name.
-
-    Returns:
-        str: The title.
-    """
-    band, song = filename.split(" - ")
-    if band.startswith("DECO"):
-        return "DECO_27" + " - " + song
-    return filename
-
-
-def get_album_artwork_path(band: str, song: str, album: str = "") -> Tuple[str, str]:
-    """Gets path for the album artwork image.
-    If it exists, the album will be used. Otherwise, the song will be used.
-
-    Returns:
-        Tuple[str, str]: First element is the path. Second element is the album, or song if there's no album.
-    """
-    name_for_art = album if album else song
-    album_artwork_path = join(IMG_DIR, f"{band} - {name_for_art}.png")
-    return album_artwork_path, name_for_art
 
 
 def get_title_from_path(file_path: str) -> str:
@@ -451,17 +407,16 @@ Skip?""",
         # Sort by release year (main), and by length of album (secondary)
         recordings.sort(key=lambda recording: (recording.year, len(recording.album)))
 
-        suggested_album = get_suggested_recording(recordings)
+        suggested_album_index = get_suggested_recording(recordings)
 
         if not interactive:
             if not recordings:
                 return
-            suggested_album = max(suggested_album, 0)
-            self.update_fields_from_recording(recordings[suggested_album])
+            suggested_album_index = max(suggested_album_index, 0)
+            self.update_fields_from_recording(recordings[suggested_album_index])
             return
-
-        print_suggestions(recordings, artist, title, suggested_album)
-        chosen_recording = choose_recording(recordings, suggested_album)
+        print_suggestions(recordings, artist, title, suggested_album_index)
+        chosen_recording = choose_recording(recordings, suggested_album_index)
         if chosen_recording is not None:
             self.update_fields_from_recording(chosen_recording)
 
@@ -470,14 +425,17 @@ Skip?""",
     def update_album_art(self):
         """Updates album artwork path. Downloads the artwork if necessary"""
         if not self.band:
+            logger.debug("[update_album_art] no band, returning")
             return
 
         if not (self.album or self.song):
+            logger.debug("[update_album_art] no album and no song, returning")
             return
 
         album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
 
         if not isfile(album_artwork_path):
+            logger.debug("Album art %s not found. downloading", album_artwork_path)
             download_album_artwork(self.band, name_for_art, filepath=album_artwork_path)
 
         # Make sure the file does exist (in case the download has failed)
@@ -521,6 +479,7 @@ Skip?""",
         if self.art_path:
             with open(self.art_path, "rb") as img:
                 mp3_file["artwork"] = img.read()
+                logger.debug("Updated album artwork from %s", self.art_path)
 
         mp3_file.save()
 
@@ -559,10 +518,11 @@ def update_metadata_for_directory(
     paths = Path(base_path).rglob("*.mp3") if recursive else Path(base_path).glob("*.mp3")
 
     for path in paths:
-        input(f"About to set data for {path.name}. Press enter to continue...")
+        logger.debug("Getting metadata from %s", str(path.absolute()))
         metadata = MP3MetaData.from_file(file_path=str(path.absolute()))
         metadata.update_missing_fields(interactive=interactive)
 
         if update_album_art:
             metadata.update_album_art()
+            logger.debug("Album art path: %s", metadata.art_path)
         metadata.apply_on_file(file_path=str(path.absolute()))

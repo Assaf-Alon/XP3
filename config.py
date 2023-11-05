@@ -33,3 +33,6 @@ for directory in XP3_DIRS:
     except Exception as e:
         print(f"Failed to create {directory} directory: {e}")
         sys.exit(1)
+
+
+PATTERN_ILLEGAL_CHARS = r'[\\/:*?"<>|]'

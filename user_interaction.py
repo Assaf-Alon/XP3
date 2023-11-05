@@ -1,9 +1,15 @@
 """Functions for interaction with users, such as get_user_input"""
+import logging
 from typing import Any, List, Optional
 
 from colorama import Back, Fore
 
+from config import IS_DEBUG
 from music_api import ReleaseRecording
+
+logging.basicConfig()
+logger = logging.getLogger("XP3")
+logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
 
 def get_user_input(prompt: str, default: Any) -> str:
@@ -19,7 +25,7 @@ def get_user_input(prompt: str, default: Any) -> str:
     if prompt.endswith(":"):
         prompt = prompt[:-1]
     prompt = prompt.strip()
-    if default:
+    if default or default == 0:
         if str(default).lower() == "true":
             prompt = f"{prompt} [Y/n]"
         elif str(default).lower() == "false":
@@ -46,7 +52,7 @@ def print_suggestions(
     recordings: List[ReleaseRecording],
     artist: str,
     title: str,
-    suggested_recording: int,
+    suggested_recording_index: int,
 ):
     """Prints the suggestions recordings.
 
@@ -54,28 +60,30 @@ def print_suggestions(
         recordings List[str, int, int]: The suggested recordings to print
         artist (str): The artist of the track
         title (str): The title of the track
-        suggested_recording (int): The default recording to choose.
+        suggested_recording_index (int): The default recording to choose.
     """
     print("--------------------")
     print(f"Choose the correct album for {artist} - {title}:")
     print(" -1: Skip album metadata")
     print("--------------------")
-    print(" 0 : Type metadata manually")
+    if suggested_recording_index == -1:
+        print(Fore.BLUE, Back.WHITE, end="")
+    print(" 0 : Type metadata manually" + Fore.RESET + Back.RESET)
     print("--------------------")
     for index, recording in enumerate(recordings):
-        if suggested_recording == index:  # Highlight suggested album
+        if suggested_recording_index == index:  # Highlight suggested album
             print(Fore.BLUE, Back.WHITE, end="")
         print(f"{index + 1} : {recording.album}")
         print(f" >> year : {recording.year}, track : {recording.track}" + Fore.RESET + Back.RESET)
         print("--------------------")
 
 
-def choose_recording(recordings: List[ReleaseRecording], suggested_recording: int) -> Optional[ReleaseRecording]:
+def choose_recording(recordings: List[ReleaseRecording], suggested_recording_index: int) -> Optional[ReleaseRecording]:
     """Chooses a recording interactivly using user input.
 
     Args:
         recordings (List[ReleaseRecording]): List of suggested recordings.
-        suggested_recording (int): Default index for recording from the recordings list.
+        suggested_recording_index (int): Default index for recording from the recordings list.
 
     Returns:
         ReleaseRecording: Chosen Recording
@@ -83,11 +91,15 @@ def choose_recording(recordings: List[ReleaseRecording], suggested_recording: in
 
     recording_index = None
     while not isinstance(recording_index, int):
-        recording_index = get_user_input("Enter the correct album number", default=suggested_recording + 1)
+        recording_index = get_user_input("Enter the correct album number", default=suggested_recording_index + 1)
         try:
             recording_index = int(recording_index)
         except ValueError:
-            print(f"Failed to convert {recording_index} to an int. Please try again.")
+            logger.error(f"Failed to convert input '{recording_index}' to an int. Please try again.")
+            recording_index = ""
+        if not -1 <= recording_index <= len(recordings):
+            logger.error(f"Index {recording_index} out of range. Recording length: {len(recordings)}")
+            recording_index = ""
 
     # No album information needed
     if recording_index == -1:
@@ -96,11 +108,24 @@ def choose_recording(recordings: List[ReleaseRecording], suggested_recording: in
     # Manually enter the album information
     if recording_index == 0:
         is_info_valid = False
+        defaults = (
+            (
+                recordings[suggested_recording_index].album,
+                recordings[suggested_recording_index].year,
+                recordings[suggested_recording_index].track,
+            )
+            if recordings
+            else (
+                None,
+                None,
+                None,
+            )
+        )
         while not is_info_valid:
             try:
-                album = get_user_input("Enter album name", default=recordings[suggested_recording].album)
-                year = int(get_user_input("Enter album year", default=recordings[suggested_recording].year))
-                track = int(get_user_input("Enter album track", default=recordings[suggested_recording].track))
+                album = get_user_input("Enter album name", default=defaults[0])
+                year = int(get_user_input("Enter album year", default=defaults[1]))
+                track = int(get_user_input("Enter album track", default=defaults[1]))
                 is_info_valid = True
             except ValueError:
                 print("Invalid input. Please try again.")

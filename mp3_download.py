@@ -9,6 +9,7 @@ from moviepy.editor import VideoFileClip
 from config import DEFAULT_PLAYLIST, IS_DEBUG, MP3_DIR, MP4_DIR
 from mp3_metadata import MP3MetaData
 
+logging.basicConfig()
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 

@@ -15,7 +15,10 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Raise errors instead of assert  
 - [ ] Change pick  
 - [ ] Special cases for artists (eg. DECO*27) - to dictionary instead of convert_[to/from]  _filename
-- [ ] Special cases for title strings (strings_to_remove) - to dictionary  
+- [ ] Special cases for title strings (strings_to_remove) - to dictionary
+- [ ] Change in metadata title --> fullTitle  
+- [ ] Change in metadata band --> artist  
+- [ ] Change in metadata song --> title  
 
 # Upgrades
 - [x] When updating files, try to read existing metadata and suggest to use it (to just update the album artwork)  
