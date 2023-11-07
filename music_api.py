@@ -154,6 +154,7 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
                 if "release-group" in release and album.lower() == release["release-group"]["title"].lower():
                     logger.debug(" > Found release group")
                     return release["release-group"]["id"]
+
         logger.debug(" > Haven't found release group")
         return None
     except requests.exceptions.RequestException as err:

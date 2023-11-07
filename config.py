@@ -12,10 +12,10 @@ TEST_DOWNLOAD_PATH = str(config("TEST_DOWNLOAD_PATH", default="C:\\Temp\\DOMinio
 IS_DEBUG = config("DEBUG", default=False)
 
 
-MP3_DIR = str(config("MP3_DIR", cast=str, default=join(home, "mp3")))
-MP4_DIR = str(config("MP4_DIR", cast=str, default=join(home, "mp4")))
-IMG_DIR = str(config("IMG_DIR", cast=str, default=join(home, "img")))
-TMP_DIR = str(config("TMP_DIR", cast=str, default=join(home, "tmp")))
+MP3_DIR = str(config("MP3_DIR", cast=str, default=join(home, "xp3", "mp3")))
+MP4_DIR = str(config("MP4_DIR", cast=str, default=join(home, "xp3", "mp4")))
+IMG_DIR = str(config("IMG_DIR", cast=str, default=join(home, "xp3", "img")))
+TMP_DIR = str(config("TMP_DIR", cast=str, default=join(home, "xp3", "tmp")))
 
 XP3_DIRS = (MP3_DIR, MP4_DIR, IMG_DIR, TMP_DIR)
 

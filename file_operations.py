@@ -9,39 +9,6 @@ from typing import Tuple
 from config import IMG_DIR
 
 
-def convert_to_filename(fullTitle: str) -> str:
-    """Converts title to a file name.
-       Used to handle edge cases where the title contains illegal file characters.
-
-    Args:
-        fullTitle (str): The title.
-
-    Returns:
-        str: The file name.
-    """
-    band, song = fullTitle.split(" - ")
-    if band.startswith("DECO"):
-        return "DECO*27" + " - " + song
-    return fullTitle
-
-
-# TODO - Isn't used anywhere atm.
-def convert_from_filename(filename: str) -> str:
-    """Converts filename to a title.
-       Used to handle edge cases where the title contains illegal file characters.
-
-    Args:
-        title (str): The file name.
-
-    Returns:
-        str: The title.
-    """
-    band, song = filename.split(" - ")
-    if band.startswith("DECO"):
-        return "DECO_27" + " - " + song
-    return filename
-
-
 def save_response_as_json(data: dict, artist: str, title: str):
     """Saves a response from MusicBrainz API to a json file.
 

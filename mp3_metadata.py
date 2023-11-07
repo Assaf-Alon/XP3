@@ -259,9 +259,9 @@ class MP3MetaData:
                 False,
             )
         else:
-            song = cls.mp3_file_get_as_str(mp3_file, "title")
-            band = cls.mp3_file_get_as_str(mp3_file, "artist")
-            album = cls.mp3_file_get_as_str(mp3_file, "album")
+            song = cls.mp3_file_get_as_str(mp3_file, "title").strip()
+            band = cls.mp3_file_get_as_str(mp3_file, "artist").strip()
+            album = cls.mp3_file_get_as_str(mp3_file, "album").strip()
             year = int(cls.mp3_file_get_as_str(mp3_file, "year"))
             track = int(cls.mp3_file_get_as_str(mp3_file, "tracknumber"))
             album_art = mp3_file.get("artwork")
@@ -424,6 +424,7 @@ Skip?""",
 
     def update_album_art(self):
         """Updates album artwork path. Downloads the artwork if necessary"""
+        logger.debug("[update_album_art] Called with album name %s.", self.album)
         if not self.band:
             logger.debug("[update_album_art] no band, returning")
             return
