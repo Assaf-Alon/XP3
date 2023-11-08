@@ -1,14 +1,14 @@
 """Funtions to extract data from the musicbrainz API, such as an album given a song and a band"""
-import json
 import logging
-import os
 import sys
 from typing import Any, List, Optional
 
 import requests
 
 from config import EMAIL_ADDRESS, IS_DEBUG, TEST_DOWNLOAD_PATH
+from file_operations import save_response_as_json
 
+logging.basicConfig()
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
@@ -124,10 +124,8 @@ def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
     if IS_DEBUG:
         if data.get("created"):
             del data["created"]
-        dirname = dirname = os.path.dirname(__file__)
-        json_path = os.path.join(dirname, "tests", "outputs", "json", f"{artist} - {title}.json".lower())
-        with open(json_path, "w", encoding="utf-8") as json_file:
-            json.dump(data, json_file)
+
+        save_response_as_json(data, artist, title)
 
     # Extract candidates
     return get_album_candidates(data, artist, title)
@@ -151,12 +149,16 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
         response.raise_for_status()
         data = response.json()
         if "releases" in data and data["releases"]:
-            release = data["releases"][0]
-            if "release-group" in release:
-                return release["release-group"]["id"]
+            releases = data["releases"]
+            for release in releases:
+                if "release-group" in release and album.lower() == release["release-group"]["title"].lower():
+                    logger.debug(" > Found release group")
+                    return release["release-group"]["id"]
+
+        logger.debug(" > Haven't found release group")
         return None
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+    except requests.exceptions.RequestException as err:
+        logger.error("An error occurred: %s", err)
         return None
 
 
@@ -169,6 +171,10 @@ def download_album_artwork(artist: str, album: str, filepath: str):
         filepath (str): path for the outputed image file
     """
     release_group_id = get_release_group_id(artist, album)
+    print(release_group_id)
+    if release_group_id is None:
+        logger.debug("Couldn't find release group for '%s - %s', aborting album art download", artist, album)
+        return
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
@@ -178,8 +184,8 @@ def download_album_artwork(artist: str, album: str, filepath: str):
         if response.status_code == 200:
             with open(filepath, "wb") as file:
                 file.write(response.content)
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred: {e}")
+    except requests.exceptions.RequestException as err:
+        logger.error("An error occurred: %s", err)
 
 
 def main():

@@ -4,51 +4,26 @@ import logging
 import os
 import re
 import sys
-from os.path import basename, dirname, isfile, join
+from os.path import basename, dirname, isfile
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import music_tag
 from colorama import Back, Fore
 from dateutil import parser
 from dateutil.parser import ParserError
 
-from config import IMG_DIR, IS_DEBUG
+from config import IS_DEBUG, PATTERN_ILLEGAL_CHARS
+from file_operations import get_album_artwork_path
 from music_api import ReleaseRecording, download_album_artwork, get_track_info
+from user_interaction import choose_recording, get_user_input, print_suggestions
 
+logging.basicConfig()
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
-PATTERN_ILLEGAL_CHARS = r'[\\/:*?"<>|]'
+
 STRINGS_TO_REMOVE = ["with Lyrics", "Lyrics", "720p", "1080p", "Video", "LYRICS"]
-
-
-def get_user_input(prompt: str, default: Any) -> str:
-    """Handles user input for functions that require interactivity
-
-    Args:
-        prompt (str): The message who'll be shown to the user
-        default (Any): The default value to be suggested to the user
-
-    Returns:
-        str: The chosen user input
-    """
-    if prompt.endswith(":"):
-        prompt = prompt[:-1]
-    prompt = prompt.strip()
-    if default:
-        if str(default).lower() == "y":
-            prompt = f"{prompt} [Y/n]"
-        elif str(default).lower() == "n":
-            prompt = f"{prompt} [y/N]"
-        else:
-            prompt = f"{prompt} [{default}]"
-    user_input = input(prompt + ": ")
-
-    if not user_input and default:
-        return default
-
-    return user_input
 
 
 def extract_date_from_string(string: str) -> Optional[datetime.datetime]:
@@ -111,17 +86,17 @@ def get_title_suggestion(
         suggested_title = suggested_title.replace(s, "")
     suggested_title = suggested_title.strip()
 
-    should_update_title = "Y"
+    should_update_title = True
     if interactive and suggested_title != title:
         print("\n------------------------------")
         print("About to update title of song.")
         print(f"Original  title: {title}")
         print("Suggested title: " + Fore.BLUE + Back.WHITE + suggested_title + Fore.RESET + Back.RESET)
 
-        should_update_title = get_user_input("Should use suggestion?", "Y")
+        should_update_title = get_user_input("Should use suggestion?", True)
 
     # Don't use suggestion, type manually
-    if should_update_title.lower() != "y":
+    if should_update_title is False:
         suggested_title = get_user_input("Enter the name of the title manually", title)
 
     # Update fields
@@ -137,107 +112,6 @@ def get_title_suggestion(
     band = band.strip()
     song = song.strip()
     return band, song
-
-
-# TODO - Isn't used anywhere atm.
-def convert_to_filename(title: str) -> str:
-    """Converts title to a file name.
-       Used to handle edge cases where the title contains illegal file characters.
-
-    Args:
-        title (str): The title.
-
-    Returns:
-        str: The file name.
-    """
-    band, song = title.split(" - ")
-    if band.startswith("DECO"):
-        return "DECO*27" + " - " + song
-    return title
-
-
-# TODO - Isn't used anywhere atm.
-def convert_from_filename(filename: str) -> str:
-    """Converts filename to a title.
-       Used to handle edge cases where the title contains illegal file characters.
-
-    Args:
-        title (str): The file name.
-
-    Returns:
-        str: The title.
-    """
-    band, song = filename.split(" - ")
-    if band.startswith("DECO"):
-        return "DECO_27" + " - " + song
-    return filename
-
-
-# TODO - consider changing this with `pick`
-def print_suggestions(
-    recordings: List[ReleaseRecording],
-    artist: str,
-    title: str,
-    suggested_recording: int,
-):
-    """Prints the suggestions recordings.
-
-    Args:
-        recordings List[str, int, int]: The suggested recordings to print
-        artist (str): The artist of the track
-        title (str): The title of the track
-        suggested_recording (int): The default recording to choose.
-    """
-    print("--------------------")
-    print(f"Choose the correct album for {artist} - {title}:")
-    print(" -1: Skip album metadata")
-    print("--------------------")
-    print(" 0 : Type metadata manually")
-    print("--------------------")
-    for index, recording in enumerate(recordings):
-        if suggested_recording == index:  # Highlight suggested album
-            print(Fore.BLUE, Back.WHITE, end="")
-        print(f"{index + 1} : {recording.album}")
-        print(f" >> year : {recording.year}, track : {recording.track}" + Fore.RESET + Back.RESET)
-        print("--------------------")
-
-
-def get_album_artwork_path(band: str, song: str, album: str = "") -> Tuple[str, str]:
-    """Gets path for the album artwork image.
-    If it exists, the album will be used. Otherwise, the song will be used.
-
-    Returns:
-        Tuple[str, str]: First element is the path. Second element is the album, or song if there's no album.
-    """
-    name_for_art = album if album else song
-    album_artwork_path = join(IMG_DIR, f"{band} - {name_for_art}.png")
-    return album_artwork_path, name_for_art
-
-
-def choose_recording(recordings: List[ReleaseRecording], suggested_recording: int) -> Optional[ReleaseRecording]:
-    """Chooses a recording interactivly using user input.
-
-    Args:
-        recordings (List[ReleaseRecording]): List of suggested recordings.
-        suggested_recording (int): Default index for recording from the recordings list.
-
-    Returns:
-        ReleaseRecording: Chosen Recording
-    """
-    recording_index = get_user_input("Enter the correct album number", default=suggested_recording + 1)
-    recording_index = int(recording_index)
-    # TODO - validate recording_index
-    if not recordings:
-        return None
-    if recording_index == -1:
-        return None  # No album information needed
-    if recording_index == 0:
-        # TODO - validate input
-        album = get_user_input("Enter album name", default=recordings[suggested_recording].album)
-        year = int(get_user_input("Enter album year", default=recordings[suggested_recording].year))
-        track = int(get_user_input("Enter album track", default=recordings[suggested_recording].track))
-        return ReleaseRecording(album, year, "", track, "")
-    return recordings[recording_index - 1]
 
 
 def get_title_from_path(file_path: str) -> str:
@@ -385,9 +259,9 @@ class MP3MetaData:
                 False,
             )
         else:
-            song = cls.mp3_file_get_as_str(mp3_file, "title")
-            band = cls.mp3_file_get_as_str(mp3_file, "artist")
-            album = cls.mp3_file_get_as_str(mp3_file, "album")
+            song = cls.mp3_file_get_as_str(mp3_file, "title").strip()
+            band = cls.mp3_file_get_as_str(mp3_file, "artist").strip()
+            album = cls.mp3_file_get_as_str(mp3_file, "album").strip()
             year = int(cls.mp3_file_get_as_str(mp3_file, "year"))
             track = int(cls.mp3_file_get_as_str(mp3_file, "tracknumber"))
             album_art = mp3_file.get("artwork")
@@ -482,16 +356,26 @@ class MP3MetaData:
         """Get title (band - song)"""
         return self.band + " - " + self.song
 
+    def update_fields_from_recording(self, recording: Optional[ReleaseRecording] = None):
+        """
+        If recording is given, updates year, album, track from it
+        """
+        if not recording:
+            return
+        self.year = recording.year
+        self.album = recording.album
+        self.track = recording.track
+
     def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
         """Updates missing mp3 metadata fields.
         Args:
             interactive (bool, optional): Should run in interactive mode, get user feedback regarding title fixes.
                                           Defaults to False.
             keep_current_metadata (bool, optional): States whether to use existing metadata.
-                                                    USED ONLY IF interactive=False!
                                                     Defaults to False.
         """
         if not self.title:
+            logger.debug("No title. Returning...")
             return
 
         # Check if there're missing fields
@@ -500,9 +384,9 @@ class MP3MetaData:
             if not interactive and keep_current_metadata:
                 logger.debug("Keeping current metadata for %s", self.title)
                 return
-            if not interactive:
+            if not interactive or keep_current_metadata:
                 should_use_existing_metadata = keep_current_metadata
-            else:  # Interactive mode
+            else:  # Interactive mode, keep_current_metadata is False
                 should_use_existing_metadata = get_user_input(
                     prompt=f"""Metadata already set.
 {self.title}
@@ -510,11 +394,9 @@ album = {self.album}
 year = {self.year}
 track = {self.track}
 Skip?""",
-                    default="Y",
+                    default=True,
                 )
-                should_use_existing_metadata = should_use_existing_metadata.lower() == "y"
 
-            # TODO - handle user input
             if should_use_existing_metadata:
                 return
 
@@ -525,44 +407,36 @@ Skip?""",
         # Sort by release year (main), and by length of album (secondary)
         recordings.sort(key=lambda recording: (recording.year, len(recording.album)))
 
-        suggested_album = get_suggested_recording(recordings)
+        suggested_album_index = get_suggested_recording(recordings)
 
         if not interactive:
             if not recordings:
-                self.album = ""
-                self.year = 0
-                self.track = 0
                 return
-            suggested_album = max(suggested_album, 0)
-            self.album = recordings[suggested_album].album
-            self.year = recordings[suggested_album].year
-            self.track = recordings[suggested_album].track
+            suggested_album_index = max(suggested_album_index, 0)
+            self.update_fields_from_recording(recordings[suggested_album_index])
             return
-
-        print_suggestions(recordings, artist, title, suggested_album)
-        chosen_recording = choose_recording(recordings, suggested_album)
-        if chosen_recording is None:
-            self.album = ""
-            self.year = 0
-            self.track = 0
-        else:
-            self.album = chosen_recording.album
-            self.year = chosen_recording.year
-            self.track = chosen_recording.track
+        print_suggestions(recordings, artist, title, suggested_album_index)
+        chosen_recording = choose_recording(recordings, suggested_album_index, title)
+        if chosen_recording is not None:
+            self.update_fields_from_recording(chosen_recording)
 
         logger.debug("Album: %s, year: %d, track: %d", self.album, self.year, self.track)
 
     def update_album_art(self):
         """Updates album artwork path. Downloads the artwork if necessary"""
+        logger.debug("[update_album_art] Called with album name %s.", self.album)
         if not self.band:
+            logger.debug("[update_album_art] no band, returning")
             return
 
         if not (self.album or self.song):
+            logger.debug("[update_album_art] no album and no song, returning")
             return
 
         album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
 
         if not isfile(album_artwork_path):
+            logger.debug("Album art %s not found. downloading", album_artwork_path)
             download_album_artwork(self.band, name_for_art, filepath=album_artwork_path)
 
         # Make sure the file does exist (in case the download has failed)
@@ -606,6 +480,7 @@ Skip?""",
         if self.art_path:
             with open(self.art_path, "rb") as img:
                 mp3_file["artwork"] = img.read()
+                logger.debug("Updated album artwork from %s", self.art_path)
 
         mp3_file.save()
 
@@ -644,10 +519,11 @@ def update_metadata_for_directory(
     paths = Path(base_path).rglob("*.mp3") if recursive else Path(base_path).glob("*.mp3")
 
     for path in paths:
-        input(f"About to set data for {path.name}. Press enter to continue...")
+        logger.debug("Getting metadata from %s", str(path.absolute()))
         metadata = MP3MetaData.from_file(file_path=str(path.absolute()))
         metadata.update_missing_fields(interactive=interactive)
 
         if update_album_art:
             metadata.update_album_art()
+            logger.debug("Album art path: %s", metadata.art_path)
         metadata.apply_on_file(file_path=str(path.absolute()))

@@ -1,11 +1,11 @@
 """Utilities used for testing"""
 import hashlib
-import json
 import os
 import re
 import shutil
 
 from config import TMP_DIR
+from file_operations import load_json_response
 
 
 def get_file_md5_hash(filepath: str) -> str:
@@ -54,8 +54,5 @@ def mocked_requests_get(*args, **kwargs):
     artist = url_match.group("artist")
     title = url_match.group("title")
 
-    dirname = os.path.dirname(__file__)
-    json_path = os.path.join(dirname, "outputs", "json", f"{artist} - {title}.json".lower())
-    with open(json_path, "r", encoding="utf-8") as file:
-        data = json.loads(file.read())
+    data = load_json_response(artist, title)
     return MockResponse(data, 200)

@@ -15,7 +15,10 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Raise errors instead of assert  
 - [ ] Change pick  
 - [ ] Special cases for artists (eg. DECO*27) - to dictionary instead of convert_[to/from]  _filename
-- [ ] Special cases for title strings (strings_to_remove) - to dictionary  
+- [ ] Special cases for title strings (strings_to_remove) - to dictionary
+- [ ] Change in metadata title --> fullTitle  
+- [ ] Change in metadata band --> artist  
+- [ ] Change in metadata song --> title  
 
 # Upgrades
 - [x] When updating files, try to read existing metadata and suggest to use it (to just update the album artwork)  
@@ -23,11 +26,11 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [x] Update from directory - use conventions to avoid API calls (format is `ARTIST/ALBUM (YEAR)`)  
 - [x] GitHub workflow for testing and linting
 - [x] Handle "BAND - Topic" channel name
+- [x] Add default to mp3_dir and mp4_dir, and in the program workflow check if it exists and create it it doesnt
+- [x] User interaction file (get_user_input, convert n/y to booleans and such...)
 - [ ] Address API Scheme to improve query (be able to get data for Linkin Park - Papercut (album = Hybrid Theory) and Foo Fighters - I'll Stick Around (album = Foo Fighters)). Main issue stems from the fact that these songs were first released as singles.
 - [ ] Check if can swap band and song [Papercut - Linkin Park] (via API calls?)  
-- [ ] Add default to mp3_dir and mp4_dir, and in the program workflow check if it exists and create it it doesnt
 - [ ] Add more logging (debug)
-- [ ] User interaction file (get_user_input, convert n/y to booleans and such...)
 - [ ] Configure language for artists (e.g. DECO*27), and if English doesn't work for them (0 results from query) try translating (e.g. mannequin translates correctly https://musicbrainz.org/release-group/4710e0e0-e417-45b4-9cf3-7a9f22c69174. Also make sure Ilay Botner works https://musicbrainz.org/artist/f958a500-5111-4f8b-abd2-9b7f37f18179/recordings)
 - [ ] Handle "BAND - Topic" channel name
 - [ ] env var dev / prod
@@ -43,6 +46,7 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] https://stackoverflow.com/questions/60837213/how-to-run-test-case-marked-unittest-skip-in-python
 - [ ] Convert unittest to pytest  
 - [ ] Check possibility to move patch to class level  
+- [ ] Test interactive parts  
 - [ ] Automate tests from existing files with verified metadata  
 
 # Feature Requests
