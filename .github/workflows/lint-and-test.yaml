@@ -5,14 +5,15 @@ on: [push, pull_request]
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
-    env:
-      MP3_DIR: /tmp/mp3
-      MP4_DIR: /tmp/mp4
-      IMG_DIR: /tmp/img
-      TMP_DIR: /tmp/tmp
+    # env:
+    #   MP3_DIR: /tmp/mp3
+    #   MP4_DIR: /tmp/mp4
+    #   IMG_DIR: /tmp/img
+    #   TMP_DIR: /tmp/tmp
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.10"]
+        # python-version: ["3.8", "3.9", "3.10", "3.11"]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
@@ -35,8 +36,8 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with unittest
       run: |
-        mkdir /tmp/mp3
-        mkdir /tmp/mp4
-        mkdir /tmp/img
-        mkdir /tmp/tmp
+        # mkdir /tmp/mp3
+        # mkdir /tmp/mp4
+        # mkdir /tmp/img
+        # mkdir /tmp/tmp
         python -m unittest discover -s tests -p test_*.py

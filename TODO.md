@@ -1,6 +1,12 @@
 # METADATA SCHEME:
 https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 
+# UP NEXT
+- [ ] Changes - Use tempfiles
+- [ ] Tests - Avenged Sevenfold - Nightmare cover art
+- [ ] Tests - Avenged Sevenfold - HTTK cover art
+- [ ] Remove comments from GitHub workflow
+
 # Changes
 - [ ] Fix pylint low prio issues (C0103,W0511,R0902,R0913,E0611)
 - [ ] Catch errors on relevant operations (try except)  
