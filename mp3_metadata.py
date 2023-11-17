@@ -422,8 +422,12 @@ Skip?""",
 
         logger.debug("Album: %s, year: %d, track: %d", self.album, self.year, self.track)
 
-    def update_album_art(self):
-        """Updates album artwork path. Downloads the artwork if necessary"""
+    def update_album_art(self, album_artwork_path: Optional[str] = None):
+        """
+        Updates album artwork path.Downloads the artwork if necessary.
+        The album_artwork_path is infered from the artist and song/album, unless provided explicitly.
+        The default path is <IMG DIR>/<artist> - <album/song>.png
+        """
         logger.debug("[update_album_art] Called with album name %s.", self.album)
         if not self.band:
             logger.debug("[update_album_art] no band, returning")
@@ -432,8 +436,8 @@ Skip?""",
         if not (self.album or self.song):
             logger.debug("[update_album_art] no album and no song, returning")
             return
-
-        album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
+        if album_artwork_path is None:
+            album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
 
         if not isfile(album_artwork_path):
             logger.debug("Album art %s not found. downloading", album_artwork_path)
