@@ -31,6 +31,7 @@ class ReleaseRecording:
         title: str = "",
         status: str = "",
         album_art_path: str = "",
+        release_group_id: str = "",
     ) -> None:
         self.album = album
         self.year = year
@@ -40,6 +41,7 @@ class ReleaseRecording:
         self.title = title
         self.status = status.lower()
         self.album_art_path = album_art_path
+        self.release_group_id = release_group_id
 
     def __eq__(self, other):
         return (
@@ -95,8 +97,13 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
                     year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
                     track = int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
                     release_type = release.get("release-group", {}).get("primary-type", "")
+                    release_group_id = release.get("release-group", {}).get("id", "")
                     status = release.get("status", "")
-                    albums.append(ReleaseRecording(album, year, artist, track, release_type, title, status))
+                    albums.append(
+                        ReleaseRecording(
+                            album, year, artist, track, release_type, title, status, release_group_id=release_group_id
+                        )
+                    )
     return list(set(albums))
 
 
@@ -162,6 +169,20 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
         return None
 
 
+def download_album_artwork_from_release_id(release_group_id: str, filepath: str):
+    url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
+    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
+
+    try:
+        logger.debug("Sending GET request to %s", url)
+        response = requests.get(url, headers, timeout=3)
+        if response.status_code == 200:
+            with open(filepath, "wb") as file:
+                file.write(response.content)
+    except requests.exceptions.RequestException as err:
+        logger.error("An error occurred: %s", err)
+
+
 def download_album_artwork(artist: str, album: str, filepath: str):
     """Downloads album artwork from coverartarchive.org
 
@@ -204,7 +225,7 @@ def main():
             break
         print("Invalid choice, choose again")
 
-    download_album_artwork(artist, track_info[index].album, TEST_DOWNLOAD_PATH)
+    download_album_artwork_from_release_id(track_info[index].release_group_id, TEST_DOWNLOAD_PATH)
 
 
 if __name__ == "__main__":

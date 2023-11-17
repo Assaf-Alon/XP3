@@ -60,7 +60,11 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m2.year, 2020)
         self.assertEqual(m2.track, 5)
 
-    @patch(target="music_api.download_album_artwork", new_callable=utils.mock_rise_against_artwork_downloader)
+    # TODO - Requests mock
+    @patch(
+        target="music_api.download_album_artwork_from_release_id",
+        new_callable=utils.mock_rise_against_artwork_downloader,
+    )
     def test_update_image1(self, mock_download_album_artwork):
         """Tests the update_album_art method"""
         m1 = MP3MetaData.from_video(title="Rise Against - Audience of One")
@@ -69,9 +73,47 @@ class TestUpdateAlbum(unittest.TestCase):
         self.assertEqual(m1.year, 2008)
         self.assertEqual(m1.track, 8)
 
-        m1.update_album_art()
+        m1.update_album_art(force_download=True)
         self.assertTrue(os.path.isfile(m1.art_path))
         self.assertEqual(utils.get_file_md5_hash(m1.art_path), "52a26502a8073d857e1d147b52efc455")
+
+        os.remove(m1.art_path)
+
+    # TODO - Requests mock
+    @patch(
+        target="music_api.download_album_artwork_from_release_id",
+        new_callable=utils.mock_a7x_nightmare_artwork_downloader,
+    )
+    def test_update_image2(self, mock_download_album_artwork):
+        """Tests the update_album_art method"""
+        m1 = MP3MetaData.from_video(title="Avenged Sevenfold - Buried Alive")
+        m1.update_missing_fields(interactive=False)
+        self.assertEqual(m1.album, "Nightmare")
+        self.assertEqual(m1.year, 2010)
+        self.assertEqual(m1.track, 4)
+
+        m1.update_album_art(force_download=True)
+        self.assertTrue(os.path.isfile(m1.art_path))
+        self.assertEqual(utils.get_file_md5_hash(m1.art_path), "a16e93a65acc20bd7d5b9bb636469df4")
+
+        os.remove(m1.art_path)
+
+    # TODO - Requests mock
+    @patch(
+        target="music_api.download_album_artwork_from_release_id",
+        new_callable=utils.mock_a7x_hail_to_the_king_artwork_downloader,
+    )
+    def test_update_image3(self, mock_download_album_artwork):
+        """Tests the update_album_art method"""
+        m1 = MP3MetaData.from_video(title="Avenged Sevenfold - Acid Rain")
+        m1.update_missing_fields(interactive=False)
+        self.assertEqual(m1.album, "Hail to the King")
+        self.assertEqual(m1.year, 2013)
+        self.assertEqual(m1.track, 10)
+
+        m1.update_album_art(force_download=True)
+        self.assertTrue(os.path.isfile(m1.art_path))
+        self.assertEqual(utils.get_file_md5_hash(m1.art_path), "9db170050eb6d18598e2e2d99591c545")
 
         os.remove(m1.art_path)
 

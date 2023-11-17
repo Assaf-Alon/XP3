@@ -31,6 +31,22 @@ def mock_rise_against_artwork_downloader():
     shutil.copyfile(src=png_path, dst=target_path)
 
 
+def mock_a7x_nightmare_artwork_downloader():
+    """Fakes the process of downloading an album image for Avenged Sevenfold - Nightmare"""
+    dirname = os.path.dirname(__file__)
+    png_path = os.path.join(dirname, "outputs", "img", "Avenged Sevenfold - Nightmare.png")
+    target_path = os.path.join(TMP_DIR, "Avenged Sevenfold - Nightmare.png")
+    shutil.copyfile(src=png_path, dst=target_path)
+
+
+def mock_a7x_hail_to_the_king_artwork_downloader():
+    """Fakes the process of downloading an album image for Avenged Sevenfold - Hail to the King"""
+    dirname = os.path.dirname(__file__)
+    png_path = os.path.join(dirname, "outputs", "img", "Avenged Sevenfold - Hail to the King.png")
+    target_path = os.path.join(TMP_DIR, "Avenged Sevenfold - Hail to the King.png")
+    shutil.copyfile(src=png_path, dst=target_path)
+
+
 def mocked_requests_get(*args, **kwargs):
     """Used for testing to avoid API calls"""
 
@@ -47,6 +63,22 @@ def mocked_requests_get(*args, **kwargs):
 
     url = args[0]
     url_match = re.match(r".*artist:(?P<artist>.+) AND recording:(?P<title>.*)&fmt=json", url)
+
+    if url_match:
+        artist = url_match.group("artist")
+        title = url_match.group("title")
+
+        data = load_json_response(artist, title)
+        return MockResponse(data, 200)
+
+    # https://coverartarchive.org/release-group/46303229-3ef4-480d-b648-a78e1c64c911/front-500
+    url_match = re.match(r".*release-group/(?P<release_group_id>.+)/.+", url)
+
+    if url_match:
+        return MockResponse({}, 200)
+        # TODO - Something about this?
+        # release_group = url_match.group("release_group_id")
+        # load_json_response(release_group)
 
     if not url_match:
         raise ValueError(f"URL not in the right format: {url}")
