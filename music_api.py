@@ -96,12 +96,18 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
                     album = release.get("title")
                     year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
                     track = int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
-                    release_type = release.get("release-group", {}).get("primary-type", "")
-                    release_group_id = release.get("release-group", {}).get("id", "")
+                    release_group = release.get("release-group", {})
                     status = release.get("status", "")
                     albums.append(
                         ReleaseRecording(
-                            album, year, artist, track, release_type, title, status, release_group_id=release_group_id
+                            album,
+                            year,
+                            artist,
+                            track,
+                            release_group.get("primary-type", ""),
+                            title,
+                            status,
+                            release_group_id=release_group.get("id", ""),
                         )
                     )
     return list(set(albums))
@@ -170,6 +176,12 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
 
 
 def download_album_artwork_from_release_id(release_group_id: str, filepath: str):
+    """Downloads album artwork from coverartarchive.org, given a release group id
+
+    Args:
+        release_group_id (str): the id of the release group
+        filepath (str): path for the outputed image file
+    """
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
     headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 

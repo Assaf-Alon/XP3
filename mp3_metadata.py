@@ -214,6 +214,7 @@ class MP3MetaData:
         genre: str = "",
         art_path: str = "",
         art_configured: bool = False,
+        release_group_id: str = "",
     ):
         self.band = band
         self.song = song
@@ -223,6 +224,7 @@ class MP3MetaData:
         self.genre = genre
         self.art_path = art_path
         self.art_configured = art_configured
+        self.release_group_id = release_group_id
 
     @staticmethod
     def mp3_file_get_as_str(mp3_file: dict, key: str) -> str:
