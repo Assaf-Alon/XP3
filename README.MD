@@ -1,5 +1,7 @@
 # XP3 - Easily Update MP3 Metadata
 
+[![CI/CD](https://github.com/Assaf-Alon/XP3/actions/workflows/lint-and-test.yaml/badge.svg)](https://github.com/Assaf-Alon/XP3/actions/workflows/lint-and-test.yaml)
+
 ## Overview
 This project is meant to enable easy and automated changes to the metadata of mp3 files with partial or no data.  
 One of the base assumptions is that the name of the file is in the following format: `<artist> - <title>.mp3`.  
