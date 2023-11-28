@@ -36,6 +36,7 @@ jobs:
     - name: Super-Linter
       uses: super-linter/super-linter@v5
       env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PYTHON_FLAKE8_CONFIG_FILE: setup.cfg
         PYTHON_PYLINT_CONFIG_FILE: .pylintrc
 
