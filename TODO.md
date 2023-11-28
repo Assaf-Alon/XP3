@@ -1,13 +1,15 @@
-# METADATA SCHEME:
-https://musicbrainz.org/doc/MusicBrainz_Database/Schema
+# TODOs are currently stored here..
 
-# UP NEXT
+## [METADATA SCHEME](https://musicbrainz.org/doc/MusicBrainz_Database/Schema)
+
+
+## UP NEXT
 - [ ] Changes - Use tempfiles
 - [ ] Tests - Avenged Sevenfold - Nightmare cover art
 - [ ] Tests - Avenged Sevenfold - HTTK cover art
 - [ ] Remove comments from GitHub workflow
 
-# Changes
+## Changes
 - [ ] Fix pylint low prio issues (C0103,W0511,R0902,R0913,E0611)
 - [ ] Catch errors on relevant operations (try except)  
 - [ ] Raise errors instead of assert  
@@ -18,7 +20,7 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Change in metadata band --> artist  
 - [ ] Change in metadata song --> title  
 
-# Upgrades
+## Upgrades
 - [ ] Address API Scheme to improve query (be able to get data for Linkin Park - Papercut (album = Hybrid Theory) and Foo Fighters - I'll Stick Around (album = Foo Fighters)). Main issue stems from the fact that these songs were first released as singles.
 - [ ] Check if can swap band and song [Papercut - Linkin Park] (via API calls?)  
 - [ ] Add more logging (debug)
@@ -26,7 +28,7 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Handle "BAND - Topic" channel name
 - [ ] env var dev / prod
 
-# Tests
+## Tests
 - [ ] Test mp4 to mp3 convertion  
 - [ ] Test the metadata update  
 - [ ] Test extract_album_info_from_path 
@@ -37,9 +39,9 @@ https://musicbrainz.org/doc/MusicBrainz_Database/Schema
 - [ ] Test interactive parts  
 - [ ] Automate tests from existing files with verified metadata  
 
-# Feature Requests
+## Feature Requests
 - [ ] Conflict handling - if ran before and configured (album, track), notify if the current song is also in (album, track)  
 
-# etc
+## etc
 - [ ] Tests for weird cases (no album), make sure nothing crashes...
 - [ ] Configure Workflows (Tests run on push)

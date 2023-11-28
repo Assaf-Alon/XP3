@@ -21,7 +21,12 @@ jobs:
         pip install -r requirements.txt
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        # pylint $(git ls-files '*.py')
+
+        git ls-files '*.py' | while IFS='' read -r file
+        do
+          pylint "$file"
+        done
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
