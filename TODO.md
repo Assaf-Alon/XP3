@@ -1,4 +1,4 @@
-# TODOs are currently stored here..
+# TODOs are currently stored here
 
 ## [METADATA SCHEME](https://musicbrainz.org/doc/MusicBrainz_Database/Schema)
 
@@ -14,7 +14,7 @@
 - [ ] Catch errors on relevant operations (try except)  
 - [ ] Raise errors instead of assert  
 - [ ] Change pick  
-- [ ] Special cases for artists (eg. DECO*27) - to dictionary instead of convert_[to/from]  _filename
+- [ ] Special cases for artists (eg. DECO*27) - to dictionary instead of convert_[to/from]_filename
 - [ ] Special cases for title strings (strings_to_remove) - to dictionary
 - [ ] Change in metadata title --> fullTitle  
 - [ ] Change in metadata band --> artist  
@@ -31,8 +31,8 @@
 ## Tests
 - [ ] Test mp4 to mp3 convertion  
 - [ ] Test the metadata update  
-- [ ] Test extract_album_info_from_path 
-- [ ] Test from_file (with paths such as `ARTIST/ALBUM (YEAR)`) 
+- [ ] Test extract_album_info_from_path  
+- [ ] Test from_file (with paths such as `ARTIST/ALBUM (YEAR)`)  
 - [ ] https://stackoverflow.com/questions/60837213/how-to-run-test-case-marked-unittest-skip-in-python
 - [ ] Convert unittest to pytest  
 - [ ] Check possibility to move patch to class level  
