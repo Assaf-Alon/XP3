@@ -29,6 +29,16 @@ jobs:
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
+  super-linter:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Super-Linter
+      uses: super-linter/super-linter@v5
+      env:
+        PYTHON_FLAKE8_CONFIG_FILE: setup.cfg
+        PYTHON_PYLINT_CONFIG_FILE: .pylintrc
+
   test-ubuntu:
     runs-on: ubuntu-latest
     strategy:
