@@ -448,7 +448,10 @@ Skip?""",
             album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
 
         if not isfile(album_artwork_path) or force_download:
-            logger.debug("Album art %s not found. downloading", album_artwork_path)
+            if not isfile(album_artwork_path):
+                logger.debug("Album art %s not found. downloading", album_artwork_path)
+            if force_download:
+                logger.debug("Force downloading %s", album_artwork_path)
             if hasattr(self, "release_group_id") and self.release_group_id:
                 download_album_artwork_from_release_id(self.release_group_id, album_artwork_path)
             else:

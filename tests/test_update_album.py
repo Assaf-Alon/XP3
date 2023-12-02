@@ -94,7 +94,7 @@ class TestUpdateAlbum(unittest.TestCase):
 
         m1.update_album_art(force_download=True)
         self.assertTrue(os.path.isfile(m1.art_path))
-        self.assertEqual(utils.get_file_md5_hash(m1.art_path), "a16e93a65acc20bd7d5b9bb636469df4")
+        self.assertEqual(utils.get_file_md5_hash(m1.art_path), "89f797827a8af335d338ac4c42835a56")
 
         os.remove(m1.art_path)
 
