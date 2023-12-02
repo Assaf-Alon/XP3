@@ -518,6 +518,7 @@ def update_metadata_for_directory(
     interactive: bool = True,
     update_album_art: bool = False,
     recursive: bool = False,
+    force_download_album_Art: bool = False,
 ):
     """Updates mp3 metadata of files in a directory.
 
@@ -539,7 +540,7 @@ def update_metadata_for_directory(
         metadata.update_missing_fields(interactive=interactive)
 
         if update_album_art:
-            metadata.update_album_art()
+            metadata.update_album_art(force_download=force_download_album_Art)
             logger.debug("Album art path: %s", metadata.art_path)
         metadata.apply_on_file(file_path=str(path.absolute()))
 
