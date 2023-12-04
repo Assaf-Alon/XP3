@@ -1,6 +1,6 @@
 """Functions for interaction with users, such as get_user_input"""
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from colorama import Back, Fore
 
@@ -12,7 +12,7 @@ logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 
 
-def get_user_input(prompt: str, default: Any) -> str:
+def get_user_input(prompt: str, default: Any) -> Union[str, bool]:
     """Handles user input for functions that require interactivity
 
     Args:
@@ -100,6 +100,7 @@ def choose_recording(
         except ValueError:
             logger.error("Failed to convert input '%d' to an int. Please try again.", recording_index)
             recording_index = ""
+            continue
         if not -1 <= recording_index <= len(recordings):
             logger.error("Index %d out of range. Recording length: %d", recording_index, len(recordings))
             recording_index = ""
