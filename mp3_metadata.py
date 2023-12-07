@@ -15,7 +15,12 @@ from dateutil.parser import ParserError
 
 from config import IS_DEBUG, PATTERN_ILLEGAL_CHARS
 from file_operations import get_album_artwork_path
-from music_api import ReleaseRecording, download_album_artwork, get_track_info
+from music_api import (
+    ReleaseRecording,
+    download_album_artwork,
+    download_album_artwork_from_release_id,
+    get_track_info,
+)
 from user_interaction import choose_recording, get_user_input, print_suggestions
 
 logging.basicConfig()
@@ -209,6 +214,7 @@ class MP3MetaData:
         genre: str = "",
         art_path: str = "",
         art_configured: bool = False,
+        release_group_id: str = "",
     ):
         self.band = band
         self.song = song
@@ -218,6 +224,7 @@ class MP3MetaData:
         self.genre = genre
         self.art_path = art_path
         self.art_configured = art_configured
+        self.release_group_id = release_group_id
 
     @staticmethod
     def mp3_file_get_as_str(mp3_file: dict, key: str) -> str:
@@ -365,6 +372,7 @@ class MP3MetaData:
         self.year = recording.year
         self.album = recording.album
         self.track = recording.track
+        self.release_group_id = recording.release_group_id
 
     def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
         """Updates missing mp3 metadata fields.
@@ -422,8 +430,12 @@ Skip?""",
 
         logger.debug("Album: %s, year: %d, track: %d", self.album, self.year, self.track)
 
-    def update_album_art(self):
-        """Updates album artwork path. Downloads the artwork if necessary"""
+    def update_album_art(self, album_artwork_path: Optional[str] = None, force_download: bool = False):
+        """
+        Updates album artwork path.Downloads the artwork if necessary.
+        The album_artwork_path is infered from the artist and song/album, unless provided explicitly.
+        The default path is <IMG DIR>/<artist> - <album/song>.png
+        """
         logger.debug("[update_album_art] Called with album name %s.", self.album)
         if not self.band:
             logger.debug("[update_album_art] no band, returning")
@@ -432,12 +444,18 @@ Skip?""",
         if not (self.album or self.song):
             logger.debug("[update_album_art] no album and no song, returning")
             return
+        if album_artwork_path is None:
+            album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
 
-        album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
-
-        if not isfile(album_artwork_path):
-            logger.debug("Album art %s not found. downloading", album_artwork_path)
-            download_album_artwork(self.band, name_for_art, filepath=album_artwork_path)
+        if not isfile(album_artwork_path) or force_download:
+            if not isfile(album_artwork_path):
+                logger.debug("Album art %s not found. downloading", album_artwork_path)
+            if force_download:
+                logger.debug("Force downloading %s", album_artwork_path)
+            if hasattr(self, "release_group_id") and self.release_group_id:
+                download_album_artwork_from_release_id(self.release_group_id, album_artwork_path)
+            else:
+                download_album_artwork(self.band, name_for_art, filepath=album_artwork_path)
 
         # Make sure the file does exist (in case the download has failed)
         if isfile(album_artwork_path):
@@ -503,6 +521,7 @@ def update_metadata_for_directory(
     interactive: bool = True,
     update_album_art: bool = False,
     recursive: bool = False,
+    force_download_album_Art: bool = False,
 ):
     """Updates mp3 metadata of files in a directory.
 
@@ -524,6 +543,16 @@ def update_metadata_for_directory(
         metadata.update_missing_fields(interactive=interactive)
 
         if update_album_art:
-            metadata.update_album_art()
+            metadata.update_album_art(force_download=force_download_album_Art)
             logger.debug("Album art path: %s", metadata.art_path)
         metadata.apply_on_file(file_path=str(path.absolute()))
+
+
+def update_image_for_file(file_path: str, interactive: bool = False):
+    """
+    Updates an image for a file.
+    Intended to run on file that has full metadata fields set, with the only exception being the album art
+    """
+    metadata = MP3MetaData.from_file(file_path, interactive)
+    metadata.update_album_art()
+    metadata.apply_on_file(file_path)
