@@ -38,11 +38,11 @@ def get_user_input(prompt: str, default: Any) -> Union[str, bool]:
         return default
     chosen_option = user_input
 
-    # Convert to booleans
+    # Return booleans
     if chosen_option.lower() in ("y", "yes"):
-        chosen_option = True
+        return True
     if chosen_option.lower() in ("n", "no"):
-        chosen_option = False
+        return False
 
     return chosen_option
 
@@ -94,9 +94,9 @@ def choose_recording(
 
     recording_index = None
     while not isinstance(recording_index, int):
-        recording_index = get_user_input("Enter the correct album number", default=suggested_recording_index + 1)
+        recording_index_input = get_user_input("Enter the correct album number", default=suggested_recording_index + 1)
         try:
-            recording_index = int(recording_index)
+            recording_index = int(recording_index_input)
         except ValueError:
             logger.error("Failed to convert input '%d' to an int. Please try again.", recording_index)
             recording_index = None

@@ -98,12 +98,17 @@ def get_title_suggestion(
         print(f"Original  title: {title}")
         print("Suggested title: " + Fore.BLUE + Back.WHITE + suggested_title + Fore.RESET + Back.RESET)
 
-        should_update_title = get_user_input("Should use suggestion?", True)
-        assert isinstance(should_update_title, bool)
+        # Extra variable for linter
+        should_use_suggestion_input = get_user_input("Should use suggestion?", True)
+        assert isinstance(should_use_suggestion_input, bool)
+        should_update_title = should_use_suggestion_input
 
     # Don't use suggestion, type manually
     if should_update_title is False:
-        suggested_title = get_user_input("Enter the name of the title manually", title)
+        # Extra variable for linter
+        title_from_user = get_user_input("Enter the name of the title manually", title)
+        assert isinstance(title_from_user, str)
+        suggested_title = title_from_user
 
     # Update fields
     title = suggested_title
@@ -292,7 +297,7 @@ class MP3MetaData:
             album_artwork_path, _ = get_album_artwork_path(band, song, album)
 
             # Extract image if it's not in the IMG DIR
-            if not isfile(album_artwork_path):
+            if not isfile(album_artwork_path) and isinstance(album_art, music_tag.file.MetadataItem):
                 album_art.value.image.save(fp=album_artwork_path)
 
         return cls(
@@ -396,7 +401,7 @@ class MP3MetaData:
             if not interactive or keep_current_metadata:
                 should_use_existing_metadata = keep_current_metadata
             else:  # Interactive mode, keep_current_metadata is False
-                should_use_existing_metadata = get_user_input(
+                interactive_keep_current_metadata = get_user_input(
                     prompt=f"""Metadata already set.
 {self.title}
 album = {self.album}
@@ -405,6 +410,8 @@ track = {self.track}
 Skip?""",
                     default=True,
                 )
+                assert isinstance(interactive_keep_current_metadata, bool)
+                should_use_existing_metadata = interactive_keep_current_metadata
 
             if should_use_existing_metadata:
                 return
@@ -433,9 +440,12 @@ Skip?""",
 
     def update_album_art(self, album_artwork_path: Optional[str] = None, force_download: bool = False):
         """
-        Updates album artwork path.Downloads the artwork if necessary.
+        Updates album artwork path. Downloads the artwork if necessary.
         The album_artwork_path is infered from the artist and song/album, unless provided explicitly.
         The default path is <IMG DIR>/<artist> - <album/song>.png
+        Args:
+            album_artwork_path (str, optional): The path of the album artwork. Defaults to None.
+            force_download (bool, optional): Download the album artwork even if it exists. Defaults to False.
         """
         logger.debug("[update_album_art] Called with album name %s.", self.album)
         if not self.band:
