@@ -99,11 +99,11 @@ def choose_recording(
             recording_index = int(recording_index)
         except ValueError:
             logger.error("Failed to convert input '%d' to an int. Please try again.", recording_index)
-            recording_index = ""
+            recording_index = None
             continue
-        if not -1 <= recording_index <= len(recordings):
+        if isinstance(recording_index, int) and not -1 <= recording_index <= len(recordings):
             logger.error("Index %d out of range. Recording length: %d", recording_index, len(recordings))
-            recording_index = ""
+            recording_index = None
 
     # No album information needed
     if recording_index == -1:

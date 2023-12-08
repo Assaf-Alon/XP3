@@ -99,6 +99,7 @@ def get_title_suggestion(
         print("Suggested title: " + Fore.BLUE + Back.WHITE + suggested_title + Fore.RESET + Back.RESET)
 
         should_update_title = get_user_input("Should use suggestion?", True)
+        assert isinstance(should_update_title, bool)
 
     # Don't use suggestion, type manually
     if should_update_title is False:
