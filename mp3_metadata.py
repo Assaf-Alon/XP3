@@ -236,12 +236,13 @@ class MP3MetaData:
         return str(value.value)
 
     @classmethod
-    def from_file(cls, file_path: str, interactive: bool = False):
+    def from_file(cls, file_path: str, interactive: bool = False, extract_image: bool = False):
         """Initalized an instance of the class from a file and its metadata.
 
         Args:
             file_path (str): The path of the file.
             interactive (bool, optional): Whether can use user input to decide on names. Defaults to False.
+            extract_image (bool, optional): If image already exists, save it as a file. Defaults to False.
 
         Returns:
             MP3MetaData: Instance of the class from the file.
@@ -271,7 +272,11 @@ class MP3MetaData:
             album = cls.mp3_file_get_as_str(mp3_file, "album").strip()
             year = int(cls.mp3_file_get_as_str(mp3_file, "year"))
             track = int(cls.mp3_file_get_as_str(mp3_file, "tracknumber"))
-            album_art = mp3_file.get("artwork")
+
+            try:
+                album_art = mp3_file.get("artwork")
+            except Exception:
+                album_art = None
             art_configured = bool(album_art)
 
         # Patch band and song
@@ -291,7 +296,7 @@ class MP3MetaData:
             album_artwork_path, _ = get_album_artwork_path(band, song, album)
 
             # Extract image if it's not in the IMG DIR
-            if not isfile(album_artwork_path):
+            if extract_image and not isfile(album_artwork_path):
                 album_art.value.image.save(fp=album_artwork_path)
 
         return cls(
@@ -546,6 +551,17 @@ def update_metadata_for_directory(
             metadata.update_album_art(force_download=force_download_album_Art)
             logger.debug("Album art path: %s", metadata.art_path)
         metadata.apply_on_file(file_path=str(path.absolute()))
+
+
+def update_metadata_for_file(file_path: str, interactive: bool = False, keep_current_metadata: bool = False):
+    """
+    Updates metadata for a single file.
+    Intended to run on file that has full metadata fields set, with the only exception being the album art
+    """
+    metadata = MP3MetaData.from_file(file_path, interactive)
+    metadata.update_missing_fields(interactive, keep_current_metadata)
+    metadata.update_album_art()
+    metadata.apply_on_file(file_path)
 
 
 def update_image_for_file(file_path: str, interactive: bool = False):
