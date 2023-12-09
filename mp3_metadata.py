@@ -451,16 +451,20 @@ Skip?""",
             return
         if album_artwork_path is None:
             album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
+            logger.debug("Generated album artwork path: %s. Name for art: %s", album_artwork_path, name_for_art)
 
         if not isfile(album_artwork_path) or force_download:
             if not isfile(album_artwork_path):
                 logger.debug("Album art %s not found. downloading", album_artwork_path)
             if force_download:
                 logger.debug("Force downloading %s", album_artwork_path)
+
             if hasattr(self, "release_group_id") and self.release_group_id:
                 download_album_artwork_from_release_id(self.release_group_id, album_artwork_path)
-            else:
+            elif name_for_art:
                 download_album_artwork(self.band, name_for_art, filepath=album_artwork_path)
+            else:
+                logger.error("Song doesn't have release group id and failed to get name for art")
 
         # Make sure the file does exist (in case the download has failed)
         if isfile(album_artwork_path):
@@ -526,7 +530,8 @@ def update_metadata_for_directory(
     interactive: bool = True,
     update_album_art: bool = False,
     recursive: bool = False,
-    force_download_album_Art: bool = False,
+    force_download_album_art: bool = False,
+    keep_current_metadata: bool = False,
 ):
     """Updates mp3 metadata of files in a directory.
 
@@ -535,6 +540,9 @@ def update_metadata_for_directory(
         interactive (bool, optional): Should run in interactive mode. Defaults to True.
         update_album_art (bool, optional): Should update the album art of the files. Defaults to False.
         recursive (bool, optional): Should apply to subdirectories. Defaults to False.
+        force_download_album_art (bool, optional): Downloads album art even if already exists. Defaults to False.
+                                                   Relevant only if `update_album_art` is set to True
+        keep_current_metadata (bool, optional): Doesn't overwrite metadata if exists. Defaults to False
     """
     if not os.path.isdir(base_path):
         logger.error("Provided base path %s is not an existing directory", base_path)
@@ -543,24 +551,28 @@ def update_metadata_for_directory(
     paths = Path(base_path).rglob("*.mp3") if recursive else Path(base_path).glob("*.mp3")
 
     for path in paths:
-        logger.debug("Getting metadata from %s", str(path.absolute()))
-        metadata = MP3MetaData.from_file(file_path=str(path.absolute()))
-        metadata.update_missing_fields(interactive=interactive)
-
-        if update_album_art:
-            metadata.update_album_art(force_download=force_download_album_Art)
-            logger.debug("Album art path: %s", metadata.art_path)
-        metadata.apply_on_file(file_path=str(path.absolute()))
+        update_metadata_for_file(
+            str(path.absolute()), interactive, keep_current_metadata, update_album_art, force_download_album_art
+        )
 
 
-def update_metadata_for_file(file_path: str, interactive: bool = False, keep_current_metadata: bool = False):
+def update_metadata_for_file(
+    file_path: str,
+    interactive: bool = False,
+    keep_current_metadata: bool = False,
+    update_album_art: bool = False,
+    force_download_album_art: bool = False,
+):
     """
     Updates metadata for a single file.
     Intended to run on file that has full metadata fields set, with the only exception being the album art
     """
+    logger.debug("Getting metadata from %s", file_path)
     metadata = MP3MetaData.from_file(file_path, interactive)
     metadata.update_missing_fields(interactive, keep_current_metadata)
-    metadata.update_album_art()
+    if update_album_art:
+        metadata.update_album_art(force_download=force_download_album_art)
+        logger.debug("Album art path: %s", metadata.art_path)
     metadata.apply_on_file(file_path)
 
 
