@@ -97,7 +97,7 @@ class TestDownloadSong(unittest.TestCase):
 
         with open(song_path, "rb") as song_file:
             data = song_file.read()
-            song_md5 = hashlib.md5(data).hexdigest()
+            song_md5 = hashlib.md5(data, usedforsecurity=False).hexdigest()
         self.assertEqual(song_md5, "b788d8de3365ea1789b42e5fcd4a7782")
 
         os.remove(song_path)

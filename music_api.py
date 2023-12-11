@@ -208,17 +208,8 @@ def download_album_artwork(artist: str, album: str, filepath: str):
     if release_group_id is None:
         logger.debug("Couldn't find release group for '%s - %s', aborting album art download", artist, album)
         return
-    url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
-    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
-    try:
-        logger.debug("Sending GET request to %s", url)
-        response = requests.get(url, headers, timeout=3)
-        if response.status_code == 200:
-            with open(filepath, "wb") as file:
-                file.write(response.content)
-    except requests.exceptions.RequestException as err:
-        logger.error("An error occurred: %s", err)
+    download_album_artwork_from_release_id(release_group_id, filepath)
 
 
 def main():
