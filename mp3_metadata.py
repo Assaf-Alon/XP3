@@ -24,9 +24,10 @@ from music_api import (
 from user_interaction import choose_recording, get_user_input, print_suggestions
 
 
-# Forward declaration of MP3MetaData (so that relevant functions will be able to use it)
 class MP3MetaData:
-    pass
+    """Forward declaration of class so that relevant functions will be able to use it"""
+
+    pass  # pylint: disable=unnecessary-pass
 
 
 logging.basicConfig()
@@ -149,9 +150,14 @@ def get_title_from_path(file_path: str) -> str:
 def get_suggested_recording_from_partial_metadata(
     recordings: List[ReleaseRecording], partial_metadata: MP3MetaData
 ) -> int:
-    # TODO - docs
+    """
+    Auxiliary function for get_suggested_recording.
+    Tries to filter recordings for only relevant albums from partial metadata
+    Returns:
+        int: the index of the recording, or -1 if haven't found a decent match
+    """
     logger.debug("Attempting to filter suggested from partial metadata")
-    valid_recording_indexes = [i for i in range(0, len(recordings))]
+    valid_recording_indexes = range(0, len(recordings))
     if len(valid_recording_indexes) == 1:
         return 0
     if partial_metadata.year:
@@ -174,7 +180,7 @@ def get_suggested_recording_from_partial_metadata(
             index for index in valid_recording_indexes if recordings[index].track == partial_metadata.track
         ]
 
-    # TODO - can possibly improve this by calling get_suggested_recording with valid_recording_indexes if its length is >= 1
+    # TODO - can possibly improve this by calling get_suggested_recording with valid indexes if its length is >= 1
     if len(valid_recording_indexes) == 1:
         logger.debug(
             "Found only 1 recording that matches the partial metadata - %s", recordings[valid_recording_indexes[0]]
@@ -182,6 +188,39 @@ def get_suggested_recording_from_partial_metadata(
         return valid_recording_indexes[0]
 
     return -1
+
+
+def should_skip_recording(recording: ReleaseRecording) -> bool:
+    """
+    Returns true if and only if shouls skip the recording,
+    decision is based on basic heuristics
+    """
+    if recording.year == 0:
+        logger.debug("Skipping %s because year == 0", recording.album)
+        return True
+    if "hits" in recording.album.lower():
+        logger.debug("Skipping %s because it contains hits", recording.album)
+        return True
+    if "live" in recording.album.lower():
+        logger.debug("Skipping %s because it contains live", recording.album)
+        return True
+    if "best" in recording.album.lower():
+        logger.debug("Skipping %s because it contains best", recording.album)
+        return True
+
+    date_from_album = extract_date_from_string(recording.album.lower())
+    if date_from_album:
+        logger.debug(
+            "Skipping %s because it contains date: %s",
+            recording.album,
+            str(date_from_album),
+        )
+        return True
+    if "promotion" in recording.status:
+        logger.debug("Skipping %s because the status is promotional", recording.album)
+        return True
+
+    return False
 
 
 def get_suggested_recording(recordings: List[ReleaseRecording], partial_metadata: Optional[MP3MetaData] = None) -> int:
@@ -208,30 +247,7 @@ def get_suggested_recording(recordings: List[ReleaseRecording], partial_metadata
     suggested_recording_index = -1
     potential_single_index = -1
     for recording_index, recording in enumerate(recordings):
-        # Year is greater then 0
-        if recording.year == 0:
-            logger.debug("Skipping %s because year == 0", recording.album)
-            continue
-        if "hits" in recording.album.lower():
-            logger.debug("Skipping %s because it contains hits", recording.album)
-            continue
-        if "live" in recording.album.lower():
-            logger.debug("Skipping %s because it contains live", recording.album)
-            continue
-        if "best" in recording.album.lower():
-            logger.debug("Skipping %s because it contains best", recording.album)
-            continue
-
-        date_from_album = extract_date_from_string(recording.album.lower())
-        if date_from_album:
-            logger.debug(
-                "Skipping %s because it contains date: %s",
-                recording.album,
-                str(date_from_album),
-            )
-            continue
-        if "promotion" in recording.status:
-            logger.debug("Skipping %s because the status is promotional", recording.album)
+        if should_skip_recording(recording):
             continue
 
         if recording.type in ("single", "ep"):
@@ -259,7 +275,7 @@ def get_suggested_recording(recordings: List[ReleaseRecording], partial_metadata
     return suggested_recording_index if suggested_recording_index >= 0 else potential_single_index
 
 
-class MP3MetaData:
+class MP3MetaData:  # pylint: disable=E0102
     """Class that represents mp3 metadata."""
 
     def __init__(
