@@ -23,6 +23,12 @@ from music_api import (
 )
 from user_interaction import choose_recording, get_user_input, print_suggestions
 
+
+# Forward declaration of MP3MetaData (so that relevant functions will be able to use it)
+class MP3MetaData:
+    pass
+
+
 logging.basicConfig()
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
@@ -140,11 +146,50 @@ def get_title_from_path(file_path: str) -> str:
     return file_name_no_extension
 
 
-def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
+def get_suggested_recording_from_partial_metadata(
+    recordings: List[ReleaseRecording], partial_metadata: MP3MetaData
+) -> int:
+    # TODO - docs
+    logger.debug("Attempting to filter suggested from partial metadata")
+    valid_recording_indexes = [i for i in range(0, len(recordings))]
+    if len(valid_recording_indexes) == 1:
+        return 0
+    if partial_metadata.year:
+        valid_recording_indexes = [
+            index for index in valid_recording_indexes if recordings[index].year == partial_metadata.year
+        ]
+
+    if partial_metadata.album:
+        valid_recording_indexes = [
+            index for index in valid_recording_indexes if recordings[index].album == partial_metadata.album
+        ]
+
+    if partial_metadata.album:
+        valid_recording_indexes = [
+            index for index in valid_recording_indexes if recordings[index].album == partial_metadata.album
+        ]
+
+    if partial_metadata.track:
+        valid_recording_indexes = [
+            index for index in valid_recording_indexes if recordings[index].track == partial_metadata.track
+        ]
+
+    # TODO - can possibly improve this by calling get_suggested_recording with valid_recording_indexes if its length is >= 1
+    if len(valid_recording_indexes) == 1:
+        logger.debug(
+            "Found only 1 recording that matches the partial metadata - %s", recordings[valid_recording_indexes[0]]
+        )
+        return valid_recording_indexes[0]
+
+    return -1
+
+
+def get_suggested_recording(recordings: List[ReleaseRecording], partial_metadata: Optional[MP3MetaData] = None) -> int:
     """Returns the index of a likely correct recording out of the recordings list using heurestics.
 
     Args:
         recordings (List[ReleaseRecording]): A sorted list (by year) of recordings to get suggestion from.
+        partial_metadata (MP3MetaData, optional): Partial metadata. For example, contains only album name.
 
     Returns:
         int: Index of suggested recording, or -1 if there's no suggestion
@@ -153,6 +198,13 @@ def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
     # e.g., year > 0 is worth 1000 points
     #       title contains forbidden works (hits, best), negative 200 points
     #       single, negative 10 points
+
+    # Try to find an album that fits the existing partial metadata
+    if partial_metadata:
+        suggested_recording_index = get_suggested_recording_from_partial_metadata(recordings, partial_metadata)
+        if suggested_recording_index >= 0:
+            return suggested_recording_index
+
     suggested_recording_index = -1
     potential_single_index = -1
     for recording_index, recording in enumerate(recordings):
@@ -428,7 +480,7 @@ Skip?""",
         # Sort by release year (main), and by length of album (secondary)
         recordings.sort(key=lambda recording: (recording.year, len(recording.album)))
 
-        suggested_album_index = get_suggested_recording(recordings)
+        suggested_album_index = get_suggested_recording(recordings, self)
 
         if not interactive:
             if not recordings:
