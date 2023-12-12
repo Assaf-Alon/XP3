@@ -94,6 +94,37 @@ def convert_mp4_to_mp3(mp4_path: str) -> Optional[str]:
     return mp3_path
 
 
+def download_song(
+    song_url: str,
+    update_album: bool = True,
+    interactive: bool = True,
+):
+    """Downloads a single song and updates its metadata
+
+    Args:
+        song_url (str): The URL of the song
+        update_album (bool, optional): Whether to update album metadata or not. Defaults to True.
+        interactive (bool, optional): Whether to run metadata updates in interactive mode. Defaults to True.
+    """
+    py_video = pytube.YouTube(song_url)
+    metadata = MP3MetaData.from_video(title=py_video.title, channel=py_video.author, interactive=interactive)
+    if update_album:
+        metadata.update_missing_fields(interactive=interactive)
+        metadata.update_album_art()
+    logger.debug(" > Downloading %s, from %s", metadata.title, song_url)
+    filename = download_ytvid(song_url, out_path=MP4_DIR, title=metadata.title)
+    if not filename:
+        return
+
+    logger.debug(" >> Downloaded %s", filename)
+    mp3_path = convert_mp4_to_mp3(mp4_path=filename)
+    if not mp3_path:
+        return
+
+    metadata.apply_on_file(mp3_path)
+    logger.debug(" >> Updated metadata for %s", mp3_path)
+
+
 def download_xprimental(
     playlist_url: str = DEFAULT_PLAYLIST,
     start_index: int = 1,
