@@ -23,6 +23,13 @@ from music_api import (
 )
 from user_interaction import choose_recording, get_user_input, print_suggestions
 
+
+class MP3MetaData:
+    """Forward declaration of class so that relevant functions will be able to use it"""
+
+    pass  # pylint: disable=unnecessary-pass
+
+
 logging.basicConfig()
 logger = logging.getLogger("XP3")
 logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
@@ -140,11 +147,88 @@ def get_title_from_path(file_path: str) -> str:
     return file_name_no_extension
 
 
-def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
+def get_suggested_recording_from_partial_metadata(
+    recordings: List[ReleaseRecording], partial_metadata: MP3MetaData
+) -> int:
+    """
+    Auxiliary function for get_suggested_recording.
+    Tries to filter recordings for only relevant albums from partial metadata
+    Returns:
+        int: the index of the recording, or -1 if haven't found a decent match
+    """
+    logger.debug("Attempting to filter suggested from partial metadata")
+    valid_recording_indexes = range(0, len(recordings))
+    if len(valid_recording_indexes) == 1:
+        return 0
+    if partial_metadata.year:
+        valid_recording_indexes = [
+            index for index in valid_recording_indexes if recordings[index].year == partial_metadata.year
+        ]
+
+    if partial_metadata.album:
+        valid_recording_indexes = [
+            index for index in valid_recording_indexes if recordings[index].album == partial_metadata.album
+        ]
+
+    if partial_metadata.album:
+        valid_recording_indexes = [
+            index for index in valid_recording_indexes if recordings[index].album == partial_metadata.album
+        ]
+
+    if partial_metadata.track:
+        valid_recording_indexes = [
+            index for index in valid_recording_indexes if recordings[index].track == partial_metadata.track
+        ]
+
+    # TODO - can possibly improve this by calling get_suggested_recording with valid indexes if its length is >= 1
+    if len(valid_recording_indexes) == 1:
+        logger.debug(
+            "Found only 1 recording that matches the partial metadata - %s", recordings[valid_recording_indexes[0]]
+        )
+        return valid_recording_indexes[0]
+
+    return -1
+
+
+def should_skip_recording(recording: ReleaseRecording) -> bool:
+    """
+    Returns true if and only if shouls skip the recording,
+    decision is based on basic heuristics
+    """
+    if recording.year == 0:
+        logger.debug("Skipping %s because year == 0", recording.album)
+        return True
+    if "hits" in recording.album.lower():
+        logger.debug("Skipping %s because it contains hits", recording.album)
+        return True
+    if "live" in recording.album.lower():
+        logger.debug("Skipping %s because it contains live", recording.album)
+        return True
+    if "best" in recording.album.lower():
+        logger.debug("Skipping %s because it contains best", recording.album)
+        return True
+
+    date_from_album = extract_date_from_string(recording.album.lower())
+    if date_from_album:
+        logger.debug(
+            "Skipping %s because it contains date: %s",
+            recording.album,
+            str(date_from_album),
+        )
+        return True
+    if "promotion" in recording.status:
+        logger.debug("Skipping %s because the status is promotional", recording.album)
+        return True
+
+    return False
+
+
+def get_suggested_recording(recordings: List[ReleaseRecording], partial_metadata: Optional[MP3MetaData] = None) -> int:
     """Returns the index of a likely correct recording out of the recordings list using heurestics.
 
     Args:
         recordings (List[ReleaseRecording]): A sorted list (by year) of recordings to get suggestion from.
+        partial_metadata (MP3MetaData, optional): Partial metadata. For example, contains only album name.
 
     Returns:
         int: Index of suggested recording, or -1 if there's no suggestion
@@ -153,33 +237,17 @@ def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
     # e.g., year > 0 is worth 1000 points
     #       title contains forbidden works (hits, best), negative 200 points
     #       single, negative 10 points
+
+    # Try to find an album that fits the existing partial metadata
+    if partial_metadata:
+        suggested_recording_index = get_suggested_recording_from_partial_metadata(recordings, partial_metadata)
+        if suggested_recording_index >= 0:
+            return suggested_recording_index
+
     suggested_recording_index = -1
     potential_single_index = -1
     for recording_index, recording in enumerate(recordings):
-        # Year is greater then 0
-        if recording.year == 0:
-            logger.debug("Skipping %s because year == 0", recording.album)
-            continue
-        if "hits" in recording.album.lower():
-            logger.debug("Skipping %s because it contains hits", recording.album)
-            continue
-        if "live" in recording.album.lower():
-            logger.debug("Skipping %s because it contains live", recording.album)
-            continue
-        if "best" in recording.album.lower():
-            logger.debug("Skipping %s because it contains best", recording.album)
-            continue
-
-        date_from_album = extract_date_from_string(recording.album.lower())
-        if date_from_album:
-            logger.debug(
-                "Skipping %s because it contains date: %s",
-                recording.album,
-                str(date_from_album),
-            )
-            continue
-        if "promotion" in recording.status:
-            logger.debug("Skipping %s because the status is promotional", recording.album)
+        if should_skip_recording(recording):
             continue
 
         if recording.type in ("single", "ep"):
@@ -207,7 +275,7 @@ def get_suggested_recording(recordings: List[ReleaseRecording]) -> int:
     return suggested_recording_index if suggested_recording_index >= 0 else potential_single_index
 
 
-class MP3MetaData:
+class MP3MetaData:  # pylint: disable=E0102
     """Class that represents mp3 metadata."""
 
     def __init__(
@@ -242,12 +310,13 @@ class MP3MetaData:
         return str(value.value)
 
     @classmethod
-    def from_file(cls, file_path: str, interactive: bool = False):
+    def from_file(cls, file_path: str, interactive: bool = False, extract_image: bool = False):
         """Initalized an instance of the class from a file and its metadata.
 
         Args:
             file_path (str): The path of the file.
             interactive (bool, optional): Whether can use user input to decide on names. Defaults to False.
+            extract_image (bool, optional): If image already exists, save it as a file. Defaults to False.
 
         Returns:
             MP3MetaData: Instance of the class from the file.
@@ -277,7 +346,11 @@ class MP3MetaData:
             album = cls.mp3_file_get_as_str(mp3_file, "album").strip()
             year = int(cls.mp3_file_get_as_str(mp3_file, "year"))
             track = int(cls.mp3_file_get_as_str(mp3_file, "tracknumber"))
-            album_art = mp3_file.get("artwork")
+
+            try:
+                album_art = mp3_file.get("artwork")
+            except Exception:
+                album_art = None
             art_configured = bool(album_art)
 
         # Patch band and song
@@ -297,7 +370,7 @@ class MP3MetaData:
             album_artwork_path, _ = get_album_artwork_path(band, song, album)
 
             # Extract image if it's not in the IMG DIR
-            if not isfile(album_artwork_path) and isinstance(album_art, music_tag.file.MetadataItem):
+            if extract_image and not isfile(album_artwork_path) and isinstance(album_art, music_tag.file.MetadataItem):
                 album_art.value.image.save(fp=album_artwork_path)
 
         return cls(
@@ -423,7 +496,7 @@ Skip?""",
         # Sort by release year (main), and by length of album (secondary)
         recordings.sort(key=lambda recording: (recording.year, len(recording.album)))
 
-        suggested_album_index = get_suggested_recording(recordings)
+        suggested_album_index = get_suggested_recording(recordings, self)
 
         if not interactive:
             if not recordings:
@@ -457,16 +530,20 @@ Skip?""",
             return
         if album_artwork_path is None:
             album_artwork_path, name_for_art = get_album_artwork_path(self.band, self.song, self.album)
+            logger.debug("Generated album artwork path: %s. Name for art: %s", album_artwork_path, name_for_art)
 
         if not isfile(album_artwork_path) or force_download:
             if not isfile(album_artwork_path):
                 logger.debug("Album art %s not found. downloading", album_artwork_path)
             if force_download:
                 logger.debug("Force downloading %s", album_artwork_path)
+
             if hasattr(self, "release_group_id") and self.release_group_id:
                 download_album_artwork_from_release_id(self.release_group_id, album_artwork_path)
-            else:
+            elif name_for_art:
                 download_album_artwork(self.band, name_for_art, filepath=album_artwork_path)
+            else:
+                logger.error("Song doesn't have release group id and failed to get name for art")
 
         # Make sure the file does exist (in case the download has failed)
         if isfile(album_artwork_path):
@@ -532,7 +609,8 @@ def update_metadata_for_directory(
     interactive: bool = True,
     update_album_art: bool = False,
     recursive: bool = False,
-    force_download_album_Art: bool = False,
+    force_download_album_art: bool = False,
+    keep_current_metadata: bool = False,
 ):
     """Updates mp3 metadata of files in a directory.
 
@@ -541,6 +619,9 @@ def update_metadata_for_directory(
         interactive (bool, optional): Should run in interactive mode. Defaults to True.
         update_album_art (bool, optional): Should update the album art of the files. Defaults to False.
         recursive (bool, optional): Should apply to subdirectories. Defaults to False.
+        force_download_album_art (bool, optional): Downloads album art even if already exists. Defaults to False.
+                                                   Relevant only if `update_album_art` is set to True
+        keep_current_metadata (bool, optional): Doesn't overwrite metadata if exists. Defaults to False
     """
     if not os.path.isdir(base_path):
         logger.error("Provided base path %s is not an existing directory", base_path)
@@ -549,14 +630,29 @@ def update_metadata_for_directory(
     paths = Path(base_path).rglob("*.mp3") if recursive else Path(base_path).glob("*.mp3")
 
     for path in paths:
-        logger.debug("Getting metadata from %s", str(path.absolute()))
-        metadata = MP3MetaData.from_file(file_path=str(path.absolute()))
-        metadata.update_missing_fields(interactive=interactive)
+        update_metadata_for_file(
+            str(path.absolute()), interactive, keep_current_metadata, update_album_art, force_download_album_art
+        )
 
-        if update_album_art:
-            metadata.update_album_art(force_download=force_download_album_Art)
-            logger.debug("Album art path: %s", metadata.art_path)
-        metadata.apply_on_file(file_path=str(path.absolute()))
+
+def update_metadata_for_file(
+    file_path: str,
+    interactive: bool = False,
+    keep_current_metadata: bool = False,
+    update_album_art: bool = False,
+    force_download_album_art: bool = False,
+):
+    """
+    Updates metadata for a single file.
+    Intended to run on file that has full metadata fields set, with the only exception being the album art
+    """
+    logger.debug("Getting metadata from %s", file_path)
+    metadata = MP3MetaData.from_file(file_path, interactive)
+    metadata.update_missing_fields(interactive, keep_current_metadata)
+    if update_album_art:
+        metadata.update_album_art(force_download=force_download_album_art)
+        logger.debug("Album art path: %s", metadata.art_path)
+    metadata.apply_on_file(file_path)
 
 
 def update_image_for_file(file_path: str, interactive: bool = False):

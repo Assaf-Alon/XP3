@@ -3,10 +3,11 @@
 
 import json
 import os
+import re
 from os.path import join
 from typing import Tuple
 
-from config import IMG_DIR
+from config import IMG_DIR, PATTERN_ILLEGAL_CHARS
 
 
 def save_response_as_json(data: dict, artist: str, title: str):
@@ -45,5 +46,8 @@ def get_album_artwork_path(band: str, song: str, album: str = "") -> Tuple[str, 
         Tuple[str, str]: First element is the path. Second element is the album, or song if there's no album.
     """
     name_for_art = album if album else song
-    album_artwork_path = join(IMG_DIR, f"{band} - {name_for_art}.png").replace("*", "_")
+
+    # Remove illegal characters
+    name_for_art = " ".join(re.sub(PATTERN_ILLEGAL_CHARS, "_", name_for_art).split()).strip()
+    album_artwork_path = join(IMG_DIR, f"{band} - {name_for_art}.png")
     return album_artwork_path, name_for_art
