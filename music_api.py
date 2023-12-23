@@ -110,10 +110,10 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
                         ReleaseRecording(
                             album,
                             year,
-                            artist,
+                            received_artist,
                             track,
                             release_group.get("primary-type", ""),
-                            title,
+                            received_title,
                             status,
                             release_group_id=release_group.get("id", ""),
                         )
