@@ -39,7 +39,8 @@ def get_playlist_songs(
 
     logger.debug("Number of videos in playlist: %d", len(playlist.video_urls))
     start_index -= 1
-    end_index = min(end_index - 1, len(playlist.video_urls))
+    end_index = min(end_index, len(playlist.video_urls)) - 1
+    logger.debug("Start: %s, End: %s", start_index, end_index)
 
     songs = []
     videos = list(playlist.videos)

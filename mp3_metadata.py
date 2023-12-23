@@ -421,7 +421,7 @@ class MP3MetaData:  # pylint: disable=E0102
             file_path (str): The path to the file
 
         Returns:
-            _type_: _description_
+            Optional[Tuple[str, str, int]]: (<artist>, <album>, <year>)
         """
         parent_directory_path = dirname(file_path)
         parent_directory = basename(parent_directory_path)
@@ -442,9 +442,10 @@ class MP3MetaData:  # pylint: disable=E0102
         """Get title (band - song)"""
         return self.band + " - " + self.song
 
-    def update_fields_from_recording(self, recording: Optional[ReleaseRecording] = None):
+    def update_fields_from_recording(self, recording: Optional[ReleaseRecording] = None, full_update: bool = True):
         """
-        If recording is given, updates year, album, track from it
+        If recording is given, updates year, album, track from it.
+        If full_update is set to False, the band and song names aren't updated from the recording
         """
         if not recording:
             return
@@ -452,6 +453,11 @@ class MP3MetaData:  # pylint: disable=E0102
         self.album = recording.album
         self.track = recording.track
         self.release_group_id = recording.release_group_id
+
+        if full_update:
+            self.band = recording.artist
+            self.song = recording.title
+
 
     def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
         """Updates missing mp3 metadata fields.

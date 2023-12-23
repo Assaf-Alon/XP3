@@ -1,5 +1,6 @@
 """Funtions to extract data from the musicbrainz API, such as an album given a song and a band"""
 import logging
+import re
 import sys
 from typing import Any, List, Optional
 
@@ -16,6 +17,10 @@ logger.setLevel(logging.DEBUG if IS_DEBUG else logging.INFO)
 if EMAIL_ADDRESS == "your-mail@mail.com":
     logger.error("Please update your mail address in .env file (MusicBrainz asked to do so")
     sys.exit(1)
+
+
+def _clean_title(title: str) -> str:
+    return " ".join(re.sub(r'[\\/:*?"<>|\'’]', "", title).split()).strip().lower()
 
 
 class ReleaseRecording:
@@ -81,8 +86,11 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
             received_title = recording.get("title", "Unknown")
             received_artist = recording.get("artist-credit", [{}])[0].get("artist", {}).get("name", "Unknown")
 
-            if received_title.lower() != title.lower():
-                logger.debug("Skipping because of title mismatch (%s != %s)", title, received_title)
+            altered_received_title = _clean_title(received_title)
+            altered_title = _clean_title(title)
+
+            if altered_received_title != altered_title:
+                logger.debug("Skipping because of title mismatch (%s != %s)", altered_title, altered_received_title)
                 continue
 
             if received_artist.lower() != artist.lower():
@@ -93,20 +101,18 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
             logger.debug("Received %d recordings", len(release_list))
             for release in release_list:
                 if release.get("title"):
-                    album = release.get("title")
                     year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
                     track = int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
                     release_group = release.get("release-group", {})
-                    status = release.get("status", "")
                     albums.append(
                         ReleaseRecording(
-                            album,
+                            release.get("title"),
                             year,
-                            artist,
+                            received_artist,
                             track,
                             release_group.get("primary-type", ""),
-                            title,
-                            status,
+                            received_title,
+                            status=release.get("status", ""),
                             release_group_id=release_group.get("id", ""),
                         )
                     )
