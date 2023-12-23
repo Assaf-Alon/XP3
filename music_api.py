@@ -101,20 +101,18 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
             logger.debug("Received %d recordings", len(release_list))
             for release in release_list:
                 if release.get("title"):
-                    album = release.get("title")
                     year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
                     track = int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
                     release_group = release.get("release-group", {})
-                    status = release.get("status", "")
                     albums.append(
                         ReleaseRecording(
-                            album,
+                            release.get("title"),
                             year,
                             received_artist,
                             track,
                             release_group.get("primary-type", ""),
                             received_title,
-                            status,
+                            status=release.get("status", ""),
                             release_group_id=release_group.get("id", ""),
                         )
                     )

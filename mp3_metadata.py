@@ -453,7 +453,7 @@ class MP3MetaData:  # pylint: disable=E0102
         self.album = recording.album
         self.track = recording.track
         self.release_group_id = recording.release_group_id
-        
+
         if full_update:
             self.band = recording.artist
             self.song = recording.title
