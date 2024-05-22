@@ -1,4 +1,6 @@
 """Funtions to extract data from the musicbrainz API, such as an album given a song and a band"""
+
+from collections import Counter
 import logging
 import re
 import sys
@@ -54,6 +56,7 @@ class ReleaseRecording:
             and self.year == other.year
             and self.artist == other.artist
             and self.type == other.type
+            and self.track == other.track
         )
 
     def __hash__(self):
@@ -98,25 +101,27 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
                 continue
             logger.debug("Not Skipping. artist: %s, title: %s", received_artist, received_title)
             release_list = recording.get("releases", [])
-            logger.debug("Received %d recordings", len(release_list))
+            logger.debug("Received %d releases", len(release_list))
             for release in release_list:
                 if release.get("title"):
                     year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
-                    track = int(release.get("media", [{}])[0].get("track-offset", 0)) + 1
                     release_group = release.get("release-group", {})
                     albums.append(
                         ReleaseRecording(
                             release.get("title"),
                             year,
-                            received_artist,
-                            track,
-                            release_group.get("primary-type", ""),
-                            received_title,
+                            artist=received_artist,
+                            track=int(release.get("media", [{}])[0].get("track-offset", 0)) + 1,
+                            r_type=release_group.get("primary-type", ""),
+                            title=received_title,
                             status=release.get("status", ""),
                             release_group_id=release_group.get("id", ""),
                         )
                     )
-    return list(set(albums))
+
+    # The complication below is to remove duplicates, while giving more weight to albums that appear more
+    counter = Counter(albums)
+    return sorted(set(albums), key=lambda release: (-counter[release], release.album, release.year, release.track))
 
 
 def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:

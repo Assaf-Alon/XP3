@@ -1,4 +1,5 @@
 """Module providing a class to work with mp3 metadata (MP3MetaData) and related utilities"""
+
 import datetime
 import logging
 import os
@@ -457,7 +458,6 @@ class MP3MetaData:  # pylint: disable=E0102
         if full_update:
             self.band = recording.artist
             self.song = recording.title
-
 
     def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
         """Updates missing mp3 metadata fields.
