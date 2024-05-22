@@ -1,4 +1,5 @@
 """Module providing a class to work with mp3 metadata (MP3MetaData) and related utilities"""
+
 import datetime
 import logging
 import os
@@ -49,9 +50,7 @@ def extract_date_from_string(string: str) -> Optional[datetime.datetime]:
 
 # TODO - Handle DECO here
 # TODO - Function is too long, split to smaller ones
-def get_title_suggestion(
-    title: str = "", band: str = "", song: str = "", channel="", interactive=False
-) -> Tuple[str, str]:
+def get_title_suggestion(title: str = "", band: str = "", song: str = "", channel="", interactive=False) -> Tuple[str, str]:
     """Gets a suggested artist and track name, given a (possibly bad) title / band and song
     If `band` and `song` aren't provided, title must be provided.
     Args:
@@ -147,9 +146,7 @@ def get_title_from_path(file_path: str) -> str:
     return file_name_no_extension
 
 
-def get_suggested_recording_from_partial_metadata(
-    recordings: List[ReleaseRecording], partial_metadata: MP3MetaData
-) -> int:
+def get_suggested_recording_from_partial_metadata(recordings: List[ReleaseRecording], partial_metadata: MP3MetaData) -> int:
     """
     Auxiliary function for get_suggested_recording.
     Tries to filter recordings for only relevant albums from partial metadata
@@ -161,30 +158,20 @@ def get_suggested_recording_from_partial_metadata(
     if len(valid_recording_indexes) == 1:
         return 0
     if partial_metadata.year:
-        valid_recording_indexes = [
-            index for index in valid_recording_indexes if recordings[index].year == partial_metadata.year
-        ]
+        valid_recording_indexes = [index for index in valid_recording_indexes if recordings[index].year == partial_metadata.year]
 
     if partial_metadata.album:
-        valid_recording_indexes = [
-            index for index in valid_recording_indexes if recordings[index].album == partial_metadata.album
-        ]
+        valid_recording_indexes = [index for index in valid_recording_indexes if recordings[index].album == partial_metadata.album]
 
     if partial_metadata.album:
-        valid_recording_indexes = [
-            index for index in valid_recording_indexes if recordings[index].album == partial_metadata.album
-        ]
+        valid_recording_indexes = [index for index in valid_recording_indexes if recordings[index].album == partial_metadata.album]
 
     if partial_metadata.track:
-        valid_recording_indexes = [
-            index for index in valid_recording_indexes if recordings[index].track == partial_metadata.track
-        ]
+        valid_recording_indexes = [index for index in valid_recording_indexes if recordings[index].track == partial_metadata.track]
 
     # TODO - can possibly improve this by calling get_suggested_recording with valid indexes if its length is >= 1
     if len(valid_recording_indexes) == 1:
-        logger.debug(
-            "Found only 1 recording that matches the partial metadata - %s", recordings[valid_recording_indexes[0]]
-        )
+        logger.debug("Found only 1 recording that matches the partial metadata - %s", recordings[valid_recording_indexes[0]])
         return valid_recording_indexes[0]
 
     return -1
@@ -458,7 +445,6 @@ class MP3MetaData:  # pylint: disable=E0102
             self.band = recording.artist
             self.song = recording.title
 
-
     def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
         """Updates missing mp3 metadata fields.
         Args:
@@ -636,9 +622,7 @@ def update_metadata_for_directory(
     paths = Path(base_path).rglob("*.mp3") if recursive else Path(base_path).glob("*.mp3")
 
     for path in paths:
-        update_metadata_for_file(
-            str(path.absolute()), interactive, keep_current_metadata, update_album_art, force_download_album_art
-        )
+        update_metadata_for_file(str(path.absolute()), interactive, keep_current_metadata, update_album_art, force_download_album_art)
 
 
 def update_metadata_for_file(
