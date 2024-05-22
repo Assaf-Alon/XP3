@@ -51,7 +51,13 @@ class ReleaseRecording:
         self.release_group_id = release_group_id
 
     def __eq__(self, other):
-        return self.album == other.album and self.year == other.year and self.artist == other.artist and self.type == other.type and self.track == other.track
+        return (
+            self.album == other.album
+            and self.year == other.year
+            and self.artist == other.artist
+            and self.type == other.type
+            and self.track == other.track
+        )
 
     def __hash__(self):
         return hash((self.album, self.artist, self.year))
