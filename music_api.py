@@ -116,7 +116,7 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
 
     # The complication below is to remove duplicates, while giving more weight to albums that appear more
     counter = Counter(albums)
-    return sorted(set(albums), key=lambda x: (-counter[x], x))
+    return sorted(set(albums), key=lambda release: (-counter[release], release.album, release.year, release.track))
 
 
 def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:

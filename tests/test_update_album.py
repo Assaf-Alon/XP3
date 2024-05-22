@@ -1,4 +1,5 @@
 """Tests that the MP3MetaData class updates the missing fields correctly using an external API"""
+
 import os
 import shutil
 import unittest
