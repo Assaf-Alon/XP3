@@ -513,7 +513,7 @@ Skip?""",
         print_suggestions(recordings, artist, title, suggested_album_index)
         chosen_recording = choose_recording(recordings, suggested_album_index, title)
         if chosen_recording is not None:
-            self.update_fields_from_recording(chosen_recording)
+            self.update_fields_from_recording(chosen_recording, False)
 
         logger.debug("Album: %s, year: %d, track: %d", self.album, self.year, self.track)
 
@@ -526,7 +526,7 @@ Skip?""",
             album_artwork_path (str, optional): The path of the album artwork. Defaults to None.
             force_download (bool, optional): Download the album artwork even if it exists. Defaults to False.
         """
-        logger.debug("[update_album_art] Called with album name %s.", self.album)
+        logger.debug("[update_album_art] Called with album name %s, band name %s", self.album, self.band)
         if not self.band:
             logger.debug("[update_album_art] no band, returning")
             return
