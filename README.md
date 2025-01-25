@@ -13,6 +13,20 @@ One of the base assumptions is that the name of the file is in the following for
 git clone https://github.com/Assaf-Alon/XP3
 ```
 
+You also need to manually install youtube-dl, by packaging and installing it:
+```
+pip install --upgrade setuptools wheel
+git clone https://github.com/ytdl-org/youtube-dl.git
+cd youtube-dl
+python setup.py bdist_wheel
+pip install dist/youtube_dl-*.whl
+```
+
+And install [ffmpeg](https://en.wikipedia.org/wiki/FFmpeg)
+```
+sudo apt-get install ffmpeg
+```
+
 ### Updating metadata for a single file
 ```python
 from mp3_metadata import update_metadata_for_file

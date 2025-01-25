@@ -1,10 +1,8 @@
 """Tests functions related to songs downloading """
-import hashlib
-import os
+
 import unittest
 
-from config import TMP_DIR
-from mp3_download import download_ytvid, get_playlist_songs
+from mp3_download import get_playlist_songs
 
 
 class TestDownloadSong(unittest.TestCase):
@@ -78,26 +76,4 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(song.year, 2016)
         self.assertEqual(song.track, 5)
 
-    @unittest.skip("Heavy test")
-    def test_download_ytvid1(self):
-        """Tests the download_ytvid function"""
-        playlist_url = "https://www.youtube.com/playlist?list=PLGN96WAC2Fv2DNdIbAHQsGVO3IxNawtu4"
-
-        songs = get_playlist_songs(
-            playlist_url=playlist_url,
-            start_index=1,
-            end_index=1,
-            interactive=False,
-        )
-
-        song, url = songs[0]
-
-        download_ytvid(url, out_path=TMP_DIR, title=song.title)
-        song_path = os.path.join(TMP_DIR, song.title) + ".mp4"
-
-        with open(song_path, "rb") as song_file:
-            data = song_file.read()
-            song_md5 = hashlib.md5(data, usedforsecurity=False).hexdigest()
-        self.assertEqual(song_md5, "b788d8de3365ea1789b42e5fcd4a7782")
-
-        os.remove(song_path)
+    # TODO - Test actual download song function

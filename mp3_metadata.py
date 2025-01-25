@@ -571,7 +571,9 @@ Skip?""",
             return
 
         # For linter
-        assert isinstance(mp3_file, music_tag.id3.Mp3File)
+        assert isinstance(mp3_file, music_tag.id3.Mp3File), "Expected music_tag.id3.Mp3File file, actually got" + str(
+            type(mp3_file)
+        )
 
         if self.song:
             mp3_file["title"] = self.song
