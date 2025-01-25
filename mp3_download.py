@@ -64,7 +64,7 @@ def get_playlist_songs(
 def download_song(
     song_url: str,
     out_path: str = MP3_DIR,
-    title: Optional[str] = None,  # TODO - Get MP3MetaData instead
+    metadata: Optional[MP3MetaData] = None,
     update_album: bool = True,
     interactive: bool = True,
 ) -> Optional[str]:
@@ -73,16 +73,19 @@ def download_song(
     Args:
         song_url (str): The URL of the song
         out_path (str, optional): The directory to save the downloaded song. Defaults to MP3_DIR.
-        title (str, optional): The title of the song. Defaults to None.
+        metadata (MP3MetaData, optional): The metadata of the song. Defaults to None.
         update_album (bool, optional): Whether to update album metadata or not. Defaults to True.
         interactive (bool, optional): Whether to run metadata updates in interactive mode. Defaults to True.
 
     Returns:
         Optional[str]: Path to the downloaded mp3 file.
     """
+    title = metadata.title
     ydl_opts = {
         "format": "bestaudio/best",
-        "outtmpl": join(out_path, f"{title}.%(ext)s") if title else join(out_path, "%(title)s.%(ext)s"),
+        "outtmpl": (
+            join(out_path, f"{title}.%(ext)s") if title else join(out_path, "%(title)s.%(ext)s")
+        ),  # %(title) is the video title, as described in https://github.com/ytdl-org/youtube-dl#output-template
         "quiet": True,
         "postprocessors": [
             {
@@ -95,7 +98,10 @@ def download_song(
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(song_url, download=True)
     mp3_path = join(out_path, f"{title}.mp3") if title else join(out_path, f"{info_dict['title']}.mp3")
-    metadata = MP3MetaData.from_video(title=info_dict["title"], channel=info_dict["uploader"], interactive=interactive)
+    if metadata is None:
+        metadata = MP3MetaData.from_video(
+            title=info_dict["title"], channel=info_dict["uploader"], interactive=interactive
+        )
     if update_album:
         metadata.update_missing_fields(interactive=interactive)
         metadata.update_album_art()
@@ -124,4 +130,4 @@ def download_xprimental(
     )
     for metadata, url in songs:
         logger.debug(" > Downloading %s, from %s", metadata.title, url)
-        download_song(url, out_path=MP3_DIR, title=metadata.title, update_album=True, interactive=interactive)
+        download_song(url, out_path=MP3_DIR, metadata=metadata, update_album=True, interactive=interactive)

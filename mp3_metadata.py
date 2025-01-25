@@ -428,13 +428,13 @@ class MP3MetaData:  # pylint: disable=E0102
             self.band = recording.artist
             self.song = recording.title
 
-    def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
+    def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = True):
         """Updates missing mp3 metadata fields.
         Args:
             interactive (bool, optional): Should run in interactive mode, get user feedback regarding title fixes.
                                           Defaults to False.
             keep_current_metadata (bool, optional): States whether to use existing metadata.
-                                                    Defaults to False.
+                                                    Defaults to True.
         """
         if not self.title:
             logger.debug("No title. Returning...")
