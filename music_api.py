@@ -28,7 +28,7 @@ def _clean_title(title: str) -> str:
 class ReleaseRecording:
     """Class that represents a recording in MusicBrainz"""
 
-    def __init__(
+    def __init__(  # pylint: disable=R0917
         self,
         album: str,
         year: int,
