@@ -23,6 +23,11 @@ pip install dist/youtube_dl-*.whl
 ```
 
 And install [ffmpeg](https://en.wikipedia.org/wiki/FFmpeg)
+#### Windows
+1. [Download ffmpeg](https://www.ffmpeg.org/download.html)
+2. Extract content in `C:\ffmpeg`, and add to the Path environment variable the following path: `C:\ffmpeg\bin`
+
+#### Ubuntu
 ```
 sudo apt-get install ffmpeg
 ```

@@ -4,7 +4,7 @@ import logging
 from os.path import join
 from typing import List, Optional, Tuple
 
-import youtube_dl
+import yt_dlp as youtube_dl
 
 from config import DEFAULT_PLAYLIST, IS_DEBUG, MP3_DIR
 from mp3_metadata import MP3MetaData
