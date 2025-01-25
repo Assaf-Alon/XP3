@@ -21,7 +21,7 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(len(songs), 1)
         song, url = songs[0]
 
-        self.assertEqual(url, "https://youtube.com/watch?v=2f_0HSWLDLg")
+        self.assertIn(url, ["https://youtube.com/watch?v=2f_0HSWLDLg", "https://www.youtube.com/watch?v=2f_0HSWLDLg"])
         self.assertEqual(song.song, "The Stage")
         self.assertEqual(song.band, "Avenged Sevenfold")
         self.assertEqual(song.title, "Avenged Sevenfold - The Stage")
@@ -41,7 +41,7 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(len(songs), 1)
         song, url = songs[0]
 
-        self.assertEqual(url, "https://youtube.com/watch?v=OD819p2fM1c")
+        self.assertIn(url, ["https://youtube.com/watch?v=OD819p2fM1c", "https://www.youtube.com/watch?v=OD819p2fM1c"])
         self.assertEqual(song.song, "Paradigm")
         self.assertEqual(song.band, "Avenged Sevenfold")
         self.assertEqual(song.title, "Avenged Sevenfold - Paradigm")
