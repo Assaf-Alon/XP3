@@ -276,7 +276,7 @@ def get_suggested_recording(recordings: List[ReleaseRecording], partial_metadata
     return suggested_recording_index if suggested_recording_index >= 0 else potential_single_index
 
 
-class MP3MetaData:  # pylint: disable=E0102
+class MP3MetaData:  # pylint: disable=E0102,R0917
     """Class that represents mp3 metadata."""
 
     def __init__(
@@ -627,7 +627,7 @@ Skip?""",
 # TODO - use this to load metadata if exists, and process song name (DECO)
 
 
-def update_metadata_for_directory(
+def update_metadata_for_directory(  # pylint: disable=R0917
     base_path: str,
     interactive: bool = True,
     update_album_art: bool = False,
