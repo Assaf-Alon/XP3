@@ -100,7 +100,7 @@ def get_title_suggestion(
     suggested_title = suggested_title.strip()
 
     should_update_title = True
-    if interactive and suggested_title != title:
+    if interactive:  # and suggested_title != title:
         print("\n------------------------------")
         print("About to update title of song.")
         print(f"Original  title: {title}")
@@ -276,7 +276,7 @@ def get_suggested_recording(recordings: List[ReleaseRecording], partial_metadata
     return suggested_recording_index if suggested_recording_index >= 0 else potential_single_index
 
 
-class MP3MetaData:  # pylint: disable=E0102
+class MP3MetaData:  # pylint: disable=E0102,R0917
     """Class that represents mp3 metadata."""
 
     def __init__(
@@ -287,6 +287,7 @@ class MP3MetaData:  # pylint: disable=E0102
         year: int = 0,
         track: int = 0,
         genre: str = "",
+        file_name: str = "",
         art_path: str = "",
         art_configured: bool = False,
         release_group_id: str = "",
@@ -297,18 +298,10 @@ class MP3MetaData:  # pylint: disable=E0102
         self.year = year
         self.track = track
         self.genre = genre
+        self.file_name = file_name
         self.art_path = art_path
         self.art_configured = art_configured
         self.release_group_id = release_group_id
-
-    @staticmethod
-    def mp3_file_get_as_str(mp3_file: dict, key: str) -> str:
-        """type checker on dict for mp3_file library"""
-        value = mp3_file.get(key)
-        if value is None or not hasattr(value, "value"):
-            return ""
-
-        return str(value.value)
 
     @classmethod
     def from_file(cls, file_path: str, interactive: bool = False, extract_image: bool = False):
@@ -323,7 +316,7 @@ class MP3MetaData:  # pylint: disable=E0102
             MP3MetaData: Instance of the class from the file.
         """
         assert file_path.endswith(".mp3")
-        assert isfile(file_path)
+        assert isfile(file_path), f"File not found: {file_path}"
 
         try:
             mp3_file = music_tag.load_file(file_path)
@@ -380,6 +373,7 @@ class MP3MetaData:  # pylint: disable=E0102
             album=album,
             year=year,
             track=track,
+            file_name=basename(file_path),
             art_path=album_artwork_path,
             art_configured=art_configured,
         )
@@ -396,7 +390,7 @@ class MP3MetaData:  # pylint: disable=E0102
             MP3MetaData: Instance of the class from the title.
         """
         band, song = get_title_suggestion(title=title, interactive=interactive)
-        return cls(band=band, song=song)
+        return cls(band=band, song=song, file_name=cls.to_file_name(band=band, song=song))
 
     @classmethod
     def from_video(cls, title: str, channel: str = "", interactive: bool = False):
@@ -411,32 +405,7 @@ class MP3MetaData:  # pylint: disable=E0102
             MP3MetaData: Instance of the class from the title.
         """
         band, song = get_title_suggestion(title=title, channel=channel, interactive=interactive)
-        return cls(band=band, song=song)
-
-    @staticmethod
-    def extract_album_info_from_path(file_path: str) -> Optional[Tuple[str, str, int]]:
-        """Tries to get album info from a path to a file.
-           Uses the convention that album directory names are `ALBUM (YEAR)`
-
-        Args:
-            file_path (str): The path to the file
-
-        Returns:
-            Optional[Tuple[str, str, int]]: (<artist>, <album>, <year>)
-        """
-        parent_directory_path = dirname(file_path)
-        parent_directory = basename(parent_directory_path)
-        # No album info if directory's pattern is not `ALBUM (YEAR)``
-        path_match = re.match(r"(?P<album>.+) \((?P<year>\d{4})\)", parent_directory)
-        if not path_match:
-            return None
-
-        grandparent_directory = basename(dirname(parent_directory))
-        return (
-            grandparent_directory,
-            path_match.group("album"),
-            int(path_match.group("year")),
-        )
+        return cls(band=band, song=song, file_name=cls.to_file_name(band=band, song=song))
 
     @property
     def title(self) -> str:
@@ -459,13 +428,13 @@ class MP3MetaData:  # pylint: disable=E0102
             self.band = recording.artist
             self.song = recording.title
 
-    def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = False):
+    def update_missing_fields(self, interactive: bool = False, keep_current_metadata: bool = True):
         """Updates missing mp3 metadata fields.
         Args:
             interactive (bool, optional): Should run in interactive mode, get user feedback regarding title fixes.
                                           Defaults to False.
             keep_current_metadata (bool, optional): States whether to use existing metadata.
-                                                    Defaults to False.
+                                                    Defaults to True.
         """
         if not self.title:
             logger.debug("No title. Returning...")
@@ -570,8 +539,9 @@ Skip?""",
             logger.error("Failed to load %s", file_path)
             return
 
-        # For linter
-        assert isinstance(mp3_file, music_tag.id3.Mp3File)
+        assert isinstance(mp3_file, music_tag.id3.Mp3File), "Expected music_tag.id3.Mp3File file, actually got" + str(
+            type(mp3_file)
+        )
 
         if self.song:
             mp3_file["title"] = self.song
@@ -606,11 +576,58 @@ Skip?""",
             return self.band + " - " + self.song
         return "Bad song"
 
+    @staticmethod
+    def mp3_file_get_as_str(mp3_file: dict, key: str) -> str:
+        """type checker on dict for mp3_file library"""
+        value = mp3_file.get(key)
+        if value is None or not hasattr(value, "value"):
+            return ""
+
+        return str(value.value)
+
+    @staticmethod
+    def extract_album_info_from_path(file_path: str) -> Optional[Tuple[str, str, int]]:
+        """Tries to get album info from a path to a file.
+           Uses the convention that album directory names are `ALBUM (YEAR)`
+
+        Args:
+            file_path (str): The path to the file
+
+        Returns:
+            Optional[Tuple[str, str, int]]: (<artist>, <album>, <year>)
+        """
+        parent_directory_path = dirname(file_path)
+        parent_directory = basename(parent_directory_path)
+        # No album info if directory's pattern is not `ALBUM (YEAR)``
+        path_match = re.match(r"(?P<album>.+) \((?P<year>\d{4})\)", parent_directory)
+        if not path_match:
+            return None
+
+        grandparent_directory = basename(dirname(parent_directory))
+        return (
+            grandparent_directory,
+            path_match.group("album"),
+            int(path_match.group("year")),
+        )
+
+    @staticmethod
+    def to_file_name(title: str = "", band: str = "", song: str = "") -> str:
+        """Converts a title to a valid file name.
+        Args:
+            title (str): The title to convert.
+        Returns:
+            str: The title as a valid file name.
+        """
+        assert title or (band and song)
+        if not title:
+            title = band + " - " + song
+        return " ".join(re.sub(PATTERN_ILLEGAL_CHARS, "_", title).split()).strip()
+
 
 # TODO - use this to load metadata if exists, and process song name (DECO)
 
 
-def update_metadata_for_directory(
+def update_metadata_for_directory(  # pylint: disable=R0917
     base_path: str,
     interactive: bool = True,
     update_album_art: bool = False,

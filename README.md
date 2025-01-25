@@ -13,6 +13,16 @@ One of the base assumptions is that the name of the file is in the following for
 git clone https://github.com/Assaf-Alon/XP3
 ```
 
+And install [ffmpeg](https://en.wikipedia.org/wiki/FFmpeg)
+#### Windows
+1. [Download ffmpeg](https://www.ffmpeg.org/download.html)
+2. Extract content in `C:\ffmpeg`, and add to the Path environment variable the following path: `C:\ffmpeg\bin`
+
+#### Ubuntu
+```
+sudo apt-get install ffmpeg
+```
+
 ### Updating metadata for a single file
 ```python
 from mp3_metadata import update_metadata_for_file

@@ -28,7 +28,7 @@ def _clean_title(title: str) -> str:
 class ReleaseRecording:
     """Class that represents a recording in MusicBrainz"""
 
-    def __init__(
+    def __init__(  # pylint: disable=R0917
         self,
         album: str,
         year: int,
@@ -92,10 +92,12 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
             altered_received_title = _clean_title(received_title)
             altered_title = _clean_title(title)
 
+            # TODO - check if strings are closes instead
             if altered_received_title != altered_title:
                 logger.debug("Skipping because of title mismatch (%s != %s)", altered_title, altered_received_title)
                 continue
 
+            # TODO - check if strings are closes instead
             if received_artist.lower() != artist.lower():
                 logger.debug("Skipping because of artist mismatch (%s != %s)", artist, received_artist)
                 continue

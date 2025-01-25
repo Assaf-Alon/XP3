@@ -1,12 +1,12 @@
 """Functions used to get data related to mp3 files and download them"""
+
 import logging
-from os.path import basename, join
+from os.path import join
 from typing import List, Optional, Tuple
 
-import pytube
-from moviepy.editor import VideoFileClip
+import yt_dlp as youtube_dl
 
-from config import DEFAULT_PLAYLIST, IS_DEBUG, MP3_DIR, MP4_DIR
+from config import DEFAULT_PLAYLIST, IS_DEBUG, MP3_DIR
 from mp3_metadata import MP3MetaData
 
 logging.basicConfig()
@@ -35,95 +35,79 @@ def get_playlist_songs(
     Returns:
         List[Tuple[MP3MetaData, str]]: List of tuples - metadata regarding the song, and the song's URL.
     """
-    playlist = pytube.Playlist(playlist_url)
+    ydl_opts = {
+        "quiet": True,
+        "extract_flat": True,
+        "skip_download": True,
+    }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        playlist_dict = ydl.extract_info(playlist_url, download=False)
 
-    logger.debug("Number of videos in playlist: %d", len(playlist.video_urls))
+    logger.debug("Number of videos in playlist: %d", len(playlist_dict["entries"]))
     start_index -= 1
-    end_index = min(end_index, len(playlist.video_urls)) - 1
-    logger.debug("Start: %s, End: %s", start_index, end_index)
+    end_index = min(end_index, len(playlist_dict["entries"])) - 1
+    logger.debug("Start: %d, End: %d", start_index, end_index)
 
     songs = []
-    videos = list(playlist.videos)
     for index in range(start_index, end_index + 1):
-        py_video = videos[index]
-        metadata = MP3MetaData.from_video(title=py_video.title, channel=py_video.author, interactive=interactive)
+        logger.debug(" > Processing song (%d/%d)", index, end_index)
+        entry = playlist_dict["entries"][index]
+        metadata = MP3MetaData.from_video(title=entry["title"], channel=entry["uploader"], interactive=interactive)
         if update_album:
             metadata.update_missing_fields(interactive=interactive)
             metadata.update_album_art()
-        songs.append((metadata, py_video.watch_url))
+        songs.append((metadata, entry["url"]))
 
     return songs
 
 
-def download_ytvid(video_url: str, out_path: str = MP4_DIR, title: Optional[str] = None) -> Optional[str]:
-    """Downloads a video from YouTube
-
-    Args:
-        video_url (str): The URL of the video
-        out_path (str, optional): Base path of the downloaded video. Defaults to MP4_DIR.
-        title (Optional[str], optional): File name of the downloaded video. If None, uses video title. Defaults to None.
-
-    Returns:
-        Optional[str]: Path to saved video if succeeded
-    """
-    if title and not title.endswith(".mp4"):
-        title = title + ".mp4"
-    mp4_stream = pytube.YouTube(video_url).streams.filter(file_extension="mp4").first()
-    if not mp4_stream:
-        logger.error("No stream found for %s", video_url)
-        return None
-    return mp4_stream.download(output_path=out_path, filename=title)
-
-
-def convert_mp4_to_mp3(mp4_path: str) -> Optional[str]:
-    """Converts an mp4 file to an mp3 file.
-
-    Args:
-        mp4_path (str): Path to the input mp4 file.
-
-    Returns:
-        Optional[str]: Path to the output mp3 file.
-    """
-    assert mp4_path.endswith(".mp4")
-    mp4_filename = basename(mp4_path)
-    mp3_path = join(MP3_DIR, mp4_filename[:-1] + "3")
-    video = VideoFileClip(mp4_path)
-    if not video.audio:
-        logger.error("Audio not found for %s", mp4_path)
-        return None
-    video.audio.write_audiofile(mp3_path)
-    return mp3_path
-
-
 def download_song(
     song_url: str,
+    out_path: str = MP3_DIR,
+    metadata: Optional[MP3MetaData] = None,
     update_album: bool = True,
     interactive: bool = True,
-):
+) -> Optional[str]:
     """Downloads a single song and updates its metadata
 
     Args:
         song_url (str): The URL of the song
+        out_path (str, optional): The directory to save the downloaded song. Defaults to MP3_DIR.
+        metadata (MP3MetaData, optional): The metadata of the song. Defaults to None.
         update_album (bool, optional): Whether to update album metadata or not. Defaults to True.
         interactive (bool, optional): Whether to run metadata updates in interactive mode. Defaults to True.
+
+    Returns:
+        Optional[str]: Path to the downloaded mp3 file.
     """
-    py_video = pytube.YouTube(song_url)
-    metadata = MP3MetaData.from_video(title=py_video.title, channel=py_video.author, interactive=interactive)
+    title = metadata.title
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "outtmpl": (
+            join(out_path, f"{title}.%(ext)s") if title else join(out_path, "%(title)s.%(ext)s")
+        ),  # %(title) is the video title, as described in https://github.com/ytdl-org/youtube-dl#output-template
+        "quiet": True,
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+            }
+        ],
+    }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(song_url, download=True)
+    mp3_path = join(out_path, f"{title}.mp3") if title else join(out_path, f"{info_dict['title']}.mp3")
+    if metadata is None:
+        metadata = MP3MetaData.from_video(
+            title=info_dict["title"], channel=info_dict["uploader"], interactive=interactive
+        )
     if update_album:
         metadata.update_missing_fields(interactive=interactive)
         metadata.update_album_art()
-    logger.debug(" > Downloading %s, from %s", metadata.title, song_url)
-    filename = download_ytvid(song_url, out_path=MP4_DIR, title=metadata.title)
-    if not filename:
-        return
-
-    logger.debug(" >> Downloaded %s", filename)
-    mp3_path = convert_mp4_to_mp3(mp4_path=filename)
-    if not mp3_path:
-        return
-
     metadata.apply_on_file(mp3_path)
     logger.debug(" >> Updated metadata for %s", mp3_path)
+    return mp3_path
 
 
 def download_xprimental(
@@ -146,14 +130,4 @@ def download_xprimental(
     )
     for metadata, url in songs:
         logger.debug(" > Downloading %s, from %s", metadata.title, url)
-        filename = download_ytvid(url, out_path=MP4_DIR, title=metadata.title)
-        if not filename:
-            continue
-
-        logger.debug(" >> Downloaded %s", filename)
-        mp3_path = convert_mp4_to_mp3(mp4_path=filename)
-        if not mp3_path:
-            continue
-
-        metadata.apply_on_file(mp3_path)
-        logger.debug(" >> Updated metadata for %s", mp3_path)
+        download_song(url, out_path=MP3_DIR, metadata=metadata, update_album=True, interactive=interactive)
