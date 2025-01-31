@@ -74,7 +74,8 @@ def download_song(
         song_url (str): The URL of the song
         out_path (str, optional): The directory to save the downloaded song. Defaults to MP3_DIR.
         metadata (MP3MetaData, optional): The metadata of the song. Defaults to None.
-        update_album (bool, optional): Whether to update album metadata or not. Defaults to True.
+        update_album (bool, optional): Whether to update album metadata or not.
+                                       Ignored if `metadata` is not None. Defaults to True.
         interactive (bool, optional): Whether to run metadata updates in interactive mode. Defaults to True.
 
     Returns:
@@ -102,9 +103,9 @@ def download_song(
         metadata = MP3MetaData.from_video(
             title=info_dict["title"], channel=info_dict["uploader"], interactive=interactive
         )
-    if update_album:
-        metadata.update_missing_fields(interactive=interactive)
-        metadata.update_album_art()
+        if update_album:
+            metadata.update_missing_fields(interactive=interactive)
+            metadata.update_album_art()
     metadata.apply_on_file(mp3_path)
     logger.debug(" >> Updated metadata for %s", mp3_path)
     return mp3_path
