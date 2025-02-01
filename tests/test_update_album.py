@@ -64,7 +64,7 @@ class TestUpdateAlbum(unittest.TestCase):
     # TODO - Requests mock
     @patch(
         target="music_api.download_album_artwork_from_release_id",
-        new_callable=utils.mock_rise_against_artwork_downloader,
+        new_callable=lambda: utils.mock_artwork_downloader("Rise Against", "Appeal to Reason"),
     )
     def test_update_image1(self, mock_download_album_artwork):
         """Tests the update_album_art method"""
@@ -83,7 +83,7 @@ class TestUpdateAlbum(unittest.TestCase):
     # TODO - Requests mock
     @patch(
         target="music_api.download_album_artwork_from_release_id",
-        new_callable=utils.mock_a7x_nightmare_artwork_downloader,
+        new_callable=lambda: utils.mock_artwork_downloader("Avenged Sevenfold", "Nightmare"),
     )
     def test_update_image2(self, mock_download_album_artwork):
         """Tests the update_album_art method"""
@@ -102,7 +102,7 @@ class TestUpdateAlbum(unittest.TestCase):
     # TODO - Requests mock
     @patch(
         target="music_api.download_album_artwork_from_release_id",
-        new_callable=utils.mock_a7x_hail_to_the_king_artwork_downloader,
+        new_callable=lambda: utils.mock_artwork_downloader("Avenged Sevenfold", "Hail to the King"),
     )
     def test_update_image3(self, mock_download_album_artwork):
         """Tests the update_album_art method"""

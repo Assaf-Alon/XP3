@@ -1,4 +1,5 @@
 """Utilities used for testing"""
+
 import hashlib
 import os
 import re
@@ -23,27 +24,11 @@ def get_file_md5_hash(filepath: str) -> str:
     return file_md5
 
 
-def mock_rise_against_artwork_downloader():
-    """Fakes the process of downloading an album image for Rise Against"""
+def mock_artwork_downloader(artist: str, album: str):
+    """Fakes the process of downloading an album image for a given artist and album"""
     dirname = os.path.dirname(__file__)
-    png_path = os.path.join(dirname, "outputs", "img", "Rise Against - Appeal to Reason.png")
-    target_path = os.path.join(TMP_DIR, "Rise Against - Appeal to Reason.png")
-    shutil.copyfile(src=png_path, dst=target_path)
-
-
-def mock_a7x_nightmare_artwork_downloader():
-    """Fakes the process of downloading an album image for Avenged Sevenfold - Nightmare"""
-    dirname = os.path.dirname(__file__)
-    png_path = os.path.join(dirname, "outputs", "img", "Avenged Sevenfold - Nightmare.png")
-    target_path = os.path.join(TMP_DIR, "Avenged Sevenfold - Nightmare.png")
-    shutil.copyfile(src=png_path, dst=target_path)
-
-
-def mock_a7x_hail_to_the_king_artwork_downloader():
-    """Fakes the process of downloading an album image for Avenged Sevenfold - Hail to the King"""
-    dirname = os.path.dirname(__file__)
-    png_path = os.path.join(dirname, "outputs", "img", "Avenged Sevenfold - Hail to the King.png")
-    target_path = os.path.join(TMP_DIR, "Avenged Sevenfold - Hail to the King.png")
+    png_path = os.path.join(dirname, "outputs", "img", f"{artist} - {album}.png")
+    target_path = os.path.join(TMP_DIR, f"{artist} - {album}.png")
     shutil.copyfile(src=png_path, dst=target_path)
 
 
