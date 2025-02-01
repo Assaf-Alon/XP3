@@ -3,6 +3,7 @@
 import logging
 from os.path import join
 from typing import List, Optional, Tuple
+from urllib.parse import urlparse
 
 import yt_dlp as youtube_dl
 
@@ -81,7 +82,16 @@ def download_song(
     Returns:
         Optional[str]: Path to the downloaded mp3 file.
     """
-    title = metadata.title
+
+    def is_valid_url(url: str) -> bool:  # TODO - find a place for this
+        parsed = urlparse(url)
+        return all([parsed.scheme, parsed.netloc])
+
+    if not is_valid_url(song_url):
+        logger.error("Invalid URL: %s", song_url)
+        raise ValueError(f"Invalid URL: {song_url}")
+
+    title = metadata.title if metadata else None
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": (
@@ -98,6 +108,7 @@ def download_song(
     }
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
         info_dict = ydl.extract_info(song_url, download=True)
+
     mp3_path = join(out_path, f"{title}.mp3") if title else join(out_path, f"{info_dict['title']}.mp3")
     if metadata is None:
         metadata = MP3MetaData.from_video(

@@ -1,8 +1,10 @@
 """Tests functions related to songs downloading """
 
+import os
 import unittest
 
-from mp3_download import get_playlist_songs
+from mp3_download import download_song, get_playlist_songs
+from mp3_metadata import MP3MetaData
 
 
 class TestDownloadSong(unittest.TestCase):
@@ -76,4 +78,19 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(song.year, 2016)
         self.assertEqual(song.track, 5)
 
-    # TODO - Test actual download song function
+    @unittest.skip("Fails on CI due to bot suspicion")
+    def test_download_song(self):
+        """Tests the download_song function"""
+
+        song_url = "https://www.youtube.com/watch?v=2f_0HSWLDLg"
+        file_path = download_song(song_url, interactive=False)
+        self.assertTrue(os.path.isfile(file_path))
+
+        metadata = MP3MetaData.from_file(file_path)
+        self.assertEqual(metadata.song, "The Stage")
+        self.assertEqual(metadata.band, "Avenged Sevenfold")
+        self.assertEqual(metadata.album, "The Stage")
+        self.assertEqual(metadata.year, 2016)
+        self.assertEqual(metadata.track, 1)
+
+        os.remove(file_path)
