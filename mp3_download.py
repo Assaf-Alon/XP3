@@ -3,12 +3,12 @@
 import logging
 from os.path import join
 from typing import List, Optional, Tuple
-
-from config import DEFAULT_PLAYLIST, IS_DEBUG, MP3_DIR
-from mp3_metadata import MP3MetaData
 from urllib.parse import urlparse
 
 import yt_dlp as youtube_dl
+
+from config import DEFAULT_PLAYLIST, IS_DEBUG, MP3_DIR
+from mp3_metadata import MP3MetaData
 
 logging.basicConfig()
 logger = logging.getLogger("XP3")
