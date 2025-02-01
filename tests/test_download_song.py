@@ -79,6 +79,7 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(song.year, 2016)
         self.assertEqual(song.track, 5)
 
+    @unittest.skip("Fails on CI due to bot suspicion")
     def test_download_song(self):
         """Tests the download_song function"""
 
