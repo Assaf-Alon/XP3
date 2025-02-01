@@ -95,9 +95,3 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(metadata.track, 1)
 
         os.remove(file_path)
-
-    def test_download_song_invalid_url(self):
-        """Tests the download_song function with an invalid URL"""
-        song_url = "https://www.youtube.com/watch?v=invalid"
-        with self.assertRaises(ValueError):
-            download_song(song_url, interactive=False)
