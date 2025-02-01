@@ -2,7 +2,10 @@
 
 import unittest
 
-from mp3_download import get_playlist_songs
+from mp3_download import get_playlist_songs, download_song
+import os
+
+from mp3_metadata import MP3MetaData
 
 
 class TestDownloadSong(unittest.TestCase):
@@ -76,4 +79,24 @@ class TestDownloadSong(unittest.TestCase):
         self.assertEqual(song.year, 2016)
         self.assertEqual(song.track, 5)
 
-    # TODO - Test actual download song function
+    def test_download_song(self):
+        """Tests the download_song function"""
+
+        song_url = "https://www.youtube.com/watch?v=2f_0HSWLDLg"
+        file_path = download_song(song_url, interactive=False)
+        self.assertTrue(os.path.isfile(file_path))
+
+        metadata = MP3MetaData.from_file(file_path)
+        self.assertEqual(metadata.song, "The Stage")
+        self.assertEqual(metadata.band, "Avenged Sevenfold")
+        self.assertEqual(metadata.album, "The Stage")
+        self.assertEqual(metadata.year, 2016)
+        self.assertEqual(metadata.track, 1)
+
+        os.remove(file_path)
+
+    def test_download_song_invalid_url(self):
+        """Tests the download_song function with an invalid URL"""
+        song_url = "https://www.youtube.com/watch?v=invalid"
+        with self.assertRaises(ValueError):
+            download_song(song_url, interactive=False)
