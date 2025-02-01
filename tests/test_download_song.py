@@ -1,10 +1,9 @@
 """Tests functions related to songs downloading """
 
+import os
 import unittest
 
-from mp3_download import get_playlist_songs, download_song
-import os
-
+from mp3_download import download_song, get_playlist_songs
 from mp3_metadata import MP3MetaData
 
 
