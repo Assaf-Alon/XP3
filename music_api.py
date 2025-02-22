@@ -1,9 +1,9 @@
 """Funtions to extract data from the musicbrainz API, such as an album given a song and a band"""
 
-from collections import Counter
 import logging
 import re
 import sys
+from collections import Counter
 from typing import Any, List, Optional
 
 import requests
@@ -82,44 +82,48 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
     """
     albums = []
 
-    if "recordings" in json_data:
-        recording_info = json_data["recordings"]
-        logger.debug("Received %d recordings", len(recording_info))
-        for recording in recording_info:
-            received_title = recording.get("title", "Unknown")
-            received_artist = recording.get("artist-credit", [{}])[0].get("artist", {}).get("name", "Unknown")
+    if "recordings" not in json_data:
+        return []
 
-            altered_received_title = _clean_title(received_title)
-            altered_title = _clean_title(title)
+    recording_info = json_data["recordings"]
+    logger.debug("Received %d recordings", len(recording_info))
+    for recording in recording_info:
+        received_title = recording.get("title", "Unknown")
+        received_artist = recording.get("artist-credit", [{}])[0].get("artist", {}).get("name", "Unknown")
 
-            # TODO - check if strings are closes instead
-            if altered_received_title != altered_title:
-                logger.debug("Skipping because of title mismatch (%s != %s)", altered_title, altered_received_title)
+        altered_received_title = _clean_title(received_title)
+        altered_title = _clean_title(title)
+
+        # TODO - check if strings are close instead
+        if altered_received_title != altered_title:
+            logger.debug("Skipping because of title mismatch (%s != %s)", altered_title, altered_received_title)
+            continue
+
+        # TODO - check if strings are close instead
+        if received_artist.lower() != artist.lower():
+            logger.debug("Skipping because of artist mismatch (%s != %s)", artist, received_artist)
+            continue
+        logger.debug("Not Skipping. artist: %s, title: %s", received_artist, received_title)
+        release_list = recording.get("releases", [])
+        logger.debug("Received %d releases", len(release_list))
+        for release in release_list:
+            if not release.get("title"):
                 continue
 
-            # TODO - check if strings are closes instead
-            if received_artist.lower() != artist.lower():
-                logger.debug("Skipping because of artist mismatch (%s != %s)", artist, received_artist)
-                continue
-            logger.debug("Not Skipping. artist: %s, title: %s", received_artist, received_title)
-            release_list = recording.get("releases", [])
-            logger.debug("Received %d releases", len(release_list))
-            for release in release_list:
-                if release.get("title"):
-                    year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
-                    release_group = release.get("release-group", {})
-                    albums.append(
-                        ReleaseRecording(
-                            release.get("title"),
-                            year,
-                            artist=received_artist,
-                            track=int(release.get("media", [{}])[0].get("track-offset", 0)) + 1,
-                            r_type=release_group.get("primary-type", ""),
-                            title=received_title,
-                            status=release.get("status", ""),
-                            release_group_id=release_group.get("id", ""),
-                        )
-                    )
+            year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
+            release_group = release.get("release-group", {})
+            albums.append(
+                ReleaseRecording(
+                    release.get("title"),
+                    year,
+                    artist=received_artist,
+                    track=int(release.get("media", [{}])[0].get("track-offset", 0)) + 1,
+                    r_type=release_group.get("primary-type", ""),
+                    title=received_title,
+                    status=release.get("status", ""),
+                    release_group_id=release_group.get("id", ""),
+                )
+            )
 
     # The complication below is to remove duplicates, while giving more weight to albums that appear more
     counter = Counter(albums)
