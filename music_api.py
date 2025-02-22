@@ -8,7 +8,7 @@ from typing import Any, List, Optional
 
 import requests
 
-from config import EMAIL_ADDRESS, IS_DEBUG, TEST_DOWNLOAD_PATH
+from config import EMAIL_ADDRESS, ENABLE_STRICT_FILTER, IS_DEBUG, TEST_DOWNLOAD_PATH
 from file_operations import save_response_as_json
 
 logging.basicConfig()
@@ -42,6 +42,10 @@ def _perform_generic_get_request(url: str):
 
 def _clean_title(title: str) -> str:
     return " ".join(re.sub(r'[\\/:*?"<>|\'’]', "", title).split()).strip().lower()
+
+
+def _is_english(text):
+    return all(ord(char) < 128 for char in text)  # ASCII range
 
 
 class ReleaseRecording:
@@ -115,13 +119,17 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
 
         # TODO - check if strings are close instead
         if altered_received_title != altered_title:
-            logger.debug("Skipping because of title mismatch (%s != %s)", altered_title, altered_received_title)
-            continue
+            if ENABLE_STRICT_FILTER or _is_english(altered_received_title):
+                logger.debug("Skipping because of title mismatch (%s != %s)", altered_title, altered_received_title)
+                continue
 
         # TODO - check if strings are close instead
         if received_artist.lower() != artist.lower():
-            logger.debug("Skipping because of artist mismatch (%s != %s)", artist, received_artist)
-            continue
+            if ENABLE_STRICT_FILTER or _is_english(received_artist):
+                logger.debug("Skipping because of artist mismatch (%s != %s)", artist, received_artist)
+                continue
+            if not _is_english(received_artist):  # TODO - Revisit
+                received_artist = artist
         logger.debug("Not Skipping. artist: %s, title: %s", received_artist, received_title)
         release_list = recording.get("releases", [])
         logger.debug("Received %d releases", len(release_list))
@@ -151,7 +159,7 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
 
 def _overwrite_artist_name(json_data: Any, artist_name: str):
     if "recordings" not in json_data:
-        return []
+        return
 
     recording_info = json_data["recordings"]
     for recording in recording_info:
