@@ -10,6 +10,7 @@ home = expanduser("~")
 EMAIL_ADDRESS = str(config("EMAIL_ADDRESS", default="alon.assaf@campus.technion.ac.il", cast=str))
 TEST_DOWNLOAD_PATH = str(config("TEST_DOWNLOAD_PATH", default="C:\\Temp\\DOMinion.png", cast=str))
 IS_DEBUG = config("DEBUG", default=False)
+ENABLE_STRICT_FILTER = config("ENABLE_STRICT_FILTER", default=False)
 
 
 MP3_DIR = str(config("MP3_DIR", cast=str, default=join(home, "xp3", "mp3")))

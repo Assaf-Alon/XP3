@@ -1,14 +1,14 @@
 """Funtions to extract data from the musicbrainz API, such as an album given a song and a band"""
 
-from collections import Counter
 import logging
 import re
 import sys
+from collections import Counter
 from typing import Any, List, Optional
 
 import requests
 
-from config import EMAIL_ADDRESS, IS_DEBUG, TEST_DOWNLOAD_PATH
+from config import EMAIL_ADDRESS, ENABLE_STRICT_FILTER, IS_DEBUG, TEST_DOWNLOAD_PATH
 from file_operations import save_response_as_json
 
 logging.basicConfig()
@@ -20,9 +20,32 @@ if EMAIL_ADDRESS == "your-mail@mail.com":
     logger.error("Please update your mail address in .env file (MusicBrainz asked to do so")
     sys.exit(1)
 
+headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
+
+
+def _get_request(url: str):
+    """Performs GET request to a URL
+
+    Args: url (str): The URL to GET
+
+    Returns: A JSON of the response
+    """
+
+    # User-Agent header (because they requested nicely)
+
+    # API request
+    logger.debug("Sending GET request to %s", url)
+    response = requests.get(url, headers=headers, timeout=3)
+    data = response.json()
+    return data
+
 
 def _clean_title(title: str) -> str:
     return " ".join(re.sub(r'[\\/:*?"<>|\'’]', "", title).split()).strip().lower()
+
+
+def _is_english(text):
+    return all(ord(char) < 128 for char in text)  # ASCII range
 
 
 class ReleaseRecording:
@@ -82,48 +105,94 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
     """
     albums = []
 
-    if "recordings" in json_data:
-        recording_info = json_data["recordings"]
-        logger.debug("Received %d recordings", len(recording_info))
-        for recording in recording_info:
-            received_title = recording.get("title", "Unknown")
-            received_artist = recording.get("artist-credit", [{}])[0].get("artist", {}).get("name", "Unknown")
+    if "recordings" not in json_data:
+        return []
 
-            altered_received_title = _clean_title(received_title)
-            altered_title = _clean_title(title)
+    recording_info = json_data["recordings"]
+    logger.debug("Received %d recordings", len(recording_info))
+    for recording in recording_info:
+        received_title = recording.get("title", "Unknown")
+        received_artist = recording.get("artist-credit", [{}])[0].get("artist", {}).get("name", "Unknown")
 
-            # TODO - check if strings are closes instead
-            if altered_received_title != altered_title:
+        altered_received_title = _clean_title(received_title)
+        altered_title = _clean_title(title)
+
+        # TODO - check if strings are close instead
+        if altered_received_title != altered_title:
+            if ENABLE_STRICT_FILTER or _is_english(altered_received_title):
                 logger.debug("Skipping because of title mismatch (%s != %s)", altered_title, altered_received_title)
                 continue
 
-            # TODO - check if strings are closes instead
-            if received_artist.lower() != artist.lower():
+        # TODO - check if strings are close instead
+        if received_artist.lower() != artist.lower():
+            if ENABLE_STRICT_FILTER or _is_english(received_artist):
                 logger.debug("Skipping because of artist mismatch (%s != %s)", artist, received_artist)
                 continue
-            logger.debug("Not Skipping. artist: %s, title: %s", received_artist, received_title)
-            release_list = recording.get("releases", [])
-            logger.debug("Received %d releases", len(release_list))
-            for release in release_list:
-                if release.get("title"):
-                    year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
-                    release_group = release.get("release-group", {})
-                    albums.append(
-                        ReleaseRecording(
-                            release.get("title"),
-                            year,
-                            artist=received_artist,
-                            track=int(release.get("media", [{}])[0].get("track-offset", 0)) + 1,
-                            r_type=release_group.get("primary-type", ""),
-                            title=received_title,
-                            status=release.get("status", ""),
-                            release_group_id=release_group.get("id", ""),
-                        )
-                    )
+            if not _is_english(received_artist):  # TODO - Revisit
+                received_artist = artist
+        logger.debug("Not Skipping. artist: %s, title: %s", received_artist, received_title)
+        release_list = recording.get("releases", [])
+        logger.debug("Received %d releases", len(release_list))
+        for release in release_list:
+            if not release.get("title"):
+                continue
+
+            year = int(release.get("date", "0").split("-")[0]) if release.get("date", "0").split("-")[0] else 0
+            release_group = release.get("release-group", {})
+            albums.append(
+                ReleaseRecording(
+                    release.get("title"),
+                    year,
+                    artist=received_artist,
+                    track=int(release.get("media", [{}])[0].get("track-offset", 0)) + 1,
+                    r_type=release_group.get("primary-type", ""),
+                    title=received_title,
+                    status=release.get("status", ""),
+                    release_group_id=release_group.get("id", ""),
+                )
+            )
 
     # The complication below is to remove duplicates, while giving more weight to albums that appear more
     counter = Counter(albums)
     return sorted(set(albums), key=lambda release: (-counter[release], release.album, release.year, release.track))
+
+
+def _overwrite_artist_name(json_data: Any, artist_name: str):
+    if "recordings" not in json_data:
+        return
+
+    recording_info = json_data["recordings"]
+    for recording in recording_info:
+        recording["artist-credit"][0]["artist"]["name"] = artist_name
+
+
+def _get_track_info_fallback(artist: str, title: str) -> List[ReleaseRecording]:
+    """Performs a more robust query to musicbrainz.org (in comparison to `get_track_info`).
+    Useful for foreign artists, such as Daisuke Ishiwatari which will yield 0 results,
+    since his official artist name is 石渡太輔.
+
+    First query for the artist using the wanted alias, and then use the artist ID
+    to search for the actual track. Patch the artist name to the wanted alias.
+
+    Args:
+        artist (str): name of the artist associated with the title.
+        title (str): name of the title.
+
+    Returns:
+        List[ReleaseRecording]: List of ReleaseRecording with possible candidates for album track info.
+    """
+    # MusicBrainz API request URL
+    url = f"https://musicbrainz.org/ws/2/artist/?query=artist:{artist}&fmt=json"
+
+    data = _get_request(url)
+
+    artist_id = data["artists"][0]["id"]
+    url = f"https://musicbrainz.org/ws/2/recording/?query=arid:{artist_id} AND recording:{title}&fmt=json"
+
+    data = _get_request(url)
+    _overwrite_artist_name(data, artist)
+
+    return data
 
 
 def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
@@ -139,13 +208,13 @@ def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
 
-    # User-Agent header (because they requested nicely)
-    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
+    data = _get_request(url)
 
-    # API request
-    logger.debug("Sending GET request to %s", url)
-    response = requests.get(url, headers=headers, timeout=3)
-    data = response.json()
+    # If the response is empty, try a more robust search
+    if data["count"] == 0:
+        logger.debug("No recordings found - initiating fallback search")
+        data = _get_track_info_fallback(artist, title)
+
     # TODO - if env is dev / prod
     if IS_DEBUG:
         if data.get("created"):
@@ -168,7 +237,6 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
         Optional[str]: the id of the release group, or None in the case of failure
     """
     url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
-    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
     try:
         logger.debug("Sending GET request to %s", url)
         response = requests.get(url, headers=headers, timeout=3)
@@ -196,7 +264,6 @@ def download_album_artwork_from_release_id(release_group_id: str, filepath: str)
         filepath (str): path for the outputed image file
     """
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
-    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     try:
         logger.debug("Sending GET request to %s", url)
