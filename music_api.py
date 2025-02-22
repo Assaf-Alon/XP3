@@ -20,6 +20,25 @@ if EMAIL_ADDRESS == "your-mail@mail.com":
     logger.error("Please update your mail address in .env file (MusicBrainz asked to do so")
     sys.exit(1)
 
+headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
+
+
+def _perform_generic_get_request(url: str):
+    """Performs GET request to a URL
+
+    Args: url (str): The URL to GET
+
+    Returns: A JSON of the response
+    """
+
+    # User-Agent header (because they requested nicely)
+
+    # API request
+    logger.debug("Sending GET request to %s", url)
+    response = requests.get(url, headers=headers, timeout=3)
+    data = response.json()
+    return data
+
 
 def _clean_title(title: str) -> str:
     return " ".join(re.sub(r'[\\/:*?"<>|\'’]', "", title).split()).strip().lower()
@@ -130,6 +149,44 @@ def get_album_candidates(json_data: Any, artist: str, title: str) -> List[Releas
     return sorted(set(albums), key=lambda release: (-counter[release], release.album, release.year, release.track))
 
 
+def _overwrite_artist_name(json_data: Any, artist_name: str):
+    if "recordings" not in json_data:
+        return []
+
+    recording_info = json_data["recordings"]
+    for recording in recording_info:
+        recording["artist-credit"][0]["artist"]["name"] = artist_name
+
+
+def _get_track_info_fallback(artist: str, title: str) -> List[ReleaseRecording]:
+    """Performs a more robust query to musicbrainz.org (in comparison to `get_track_info`).
+    Useful for foreign artists, such as Daisuke Ishiwatari which will yield 0 results,
+    since his official artist name is 石渡太輔.
+
+    First query for the artist using the wanted alias, and then use the artist ID
+    to search for the actual track. Patch the artist name to the wanted alias.
+
+    Args:
+        artist (str): name of the artist associated with the title.
+        title (str): name of the title.
+
+    Returns:
+        List[ReleaseRecording]: List of ReleaseRecording with possible candidates for album track info.
+    """
+    # MusicBrainz API request URL
+    url = f"https://musicbrainz.org/ws/2/artist/?query=artist:{artist}&fmt=json"
+
+    data = _perform_generic_get_request(url)
+
+    artist_id = data["artists"][0]["id"]
+    url = f"https://musicbrainz.org/ws/2/recording/?query=arid:{artist_id} AND recording:{title}&fmt=json"
+
+    data = _perform_generic_get_request(url)
+    _overwrite_artist_name(data, artist)
+
+    return data
+
+
 def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
     """Queries musicbrainz.org for candidates (album, year, track number) for the track.
 
@@ -143,13 +200,13 @@ def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
 
-    # User-Agent header (because they requested nicely)
-    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
+    data = _perform_generic_get_request(url)
 
-    # API request
-    logger.debug("Sending GET request to %s", url)
-    response = requests.get(url, headers=headers, timeout=3)
-    data = response.json()
+    # If the response is empty, try a more robust search
+    if data["count"] == 0:
+        logger.debug("No recordings found - initiating fallback search")
+        data = _get_track_info_fallback(artist, title)
+
     # TODO - if env is dev / prod
     if IS_DEBUG:
         if data.get("created"):
@@ -172,7 +229,6 @@ def get_release_group_id(artist: str, album: str) -> Optional[str]:
         Optional[str]: the id of the release group, or None in the case of failure
     """
     url = f"https://musicbrainz.org/ws/2/release/?query=artist:{artist} AND release:{album}&fmt=json"
-    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
     try:
         logger.debug("Sending GET request to %s", url)
         response = requests.get(url, headers=headers, timeout=3)
@@ -200,7 +256,6 @@ def download_album_artwork_from_release_id(release_group_id: str, filepath: str)
         filepath (str): path for the outputed image file
     """
     url = f"https://coverartarchive.org/release-group/{release_group_id}/front-500"
-    headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
     try:
         logger.debug("Sending GET request to %s", url)
