@@ -184,12 +184,12 @@ def _get_track_info_fallback(artist: str, title: str) -> List[ReleaseRecording]:
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/artist/?query=artist:{artist}&fmt=json"
 
-    data = _perform_generic_get_request(url)
+    data = _get_request(url)
 
     artist_id = data["artists"][0]["id"]
     url = f"https://musicbrainz.org/ws/2/recording/?query=arid:{artist_id} AND recording:{title}&fmt=json"
 
-    data = _perform_generic_get_request(url)
+    data = _get_request(url)
     _overwrite_artist_name(data, artist)
 
     return data
@@ -208,7 +208,7 @@ def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
     # MusicBrainz API request URL
     url = f"https://musicbrainz.org/ws/2/recording/?query=artist:{artist} AND recording:{title}&fmt=json"
 
-    data = _perform_generic_get_request(url)
+    data = _get_request(url)
 
     # If the response is empty, try a more robust search
     if data["count"] == 0:
