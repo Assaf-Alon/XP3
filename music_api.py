@@ -23,7 +23,7 @@ if EMAIL_ADDRESS == "your-mail@mail.com":
 headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
 
-def _perform_generic_get_request(url: str):
+def _get_request(url: str):
     """Performs GET request to a URL
 
     Args: url (str): The URL to GET
