@@ -1,4 +1,4 @@
-requests==2.32.0
+requests==2.32.4
 music_tag==0.4.3
 python-decouple==3.8
 colorama==0.4.5
