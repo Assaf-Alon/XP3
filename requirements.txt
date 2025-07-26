@@ -3,4 +3,4 @@ music_tag==0.4.3
 python-decouple==3.8
 colorama==0.4.5
 python-dateutil==2.8.2
-yt-dlp==2025.2.19
+yt-dlp==2025.7.21
