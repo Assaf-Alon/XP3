@@ -93,6 +93,8 @@ def get_title_suggestion(
     # Attempt to patch with channel name if possible
     elif channel:
         channel = channel.replace(" - Topic", "")
+        if channel == "IPrevailBand":
+            channel = "I Prevail"
         suggested_title = channel + " - " + suggested_title
 
     for s in STRINGS_TO_REMOVE:

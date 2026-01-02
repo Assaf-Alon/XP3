@@ -3,6 +3,7 @@
 import logging
 import re
 import sys
+import time
 from collections import Counter
 from typing import Any, List, Optional
 
@@ -23,21 +24,43 @@ if EMAIL_ADDRESS == "your-mail@mail.com":
 headers = {"User-Agent": f"XPrimental/0.0.1 ( {EMAIL_ADDRESS} )"}
 
 
-def _get_request(url: str):
-    """Performs GET request to a URL
+def _get_request(url: str, max_retries: int = 3, initial_delay: float = 0.5):
+    """Performs GET request to a URL with retry logic for transient errors
 
-    Args: url (str): The URL to GET
+    Args:
+        url (str): The URL to GET
+        max_retries (int): Maximum number of retry attempts (default: 3)
+        initial_delay (float): Initial delay in seconds before first retry (default: 0.5)
 
     Returns: A JSON of the response
+    
+    Raises:
+        requests.exceptions.RequestException: If all retries fail
     """
 
     # User-Agent header (because they requested nicely)
 
-    # API request
+    # API request with retry logic
     logger.debug("Sending GET request to %s", url)
-    response = requests.get(url, headers=headers, timeout=3)
-    data = response.json()
-    return data
+    
+    for attempt in range(max_retries + 1):
+        try:
+            response = requests.get(url, headers=headers, timeout=3)
+            data = response.json()
+            return data
+        except (requests.exceptions.ConnectionError, 
+                requests.exceptions.Timeout,
+                requests.exceptions.HTTPError) as e:
+            if attempt < max_retries:
+                delay = initial_delay * (2 ** attempt)  # Exponential backoff
+                logger.warning(
+                    f"Request failed (attempt {attempt + 1}/{max_retries + 1}): {type(e).__name__}. "
+                    f"Retrying in {delay:.1f}s..."
+                )
+                time.sleep(delay)
+            else:
+                logger.error(f"Request failed after {max_retries + 1} attempts: {type(e).__name__}")
+                raise
 
 
 def _clean_title(title: str) -> str:

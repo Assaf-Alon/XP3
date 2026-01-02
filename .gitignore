@@ -4,3 +4,5 @@ old/**
 
 .env
 xp3-venv
+
+img/**
