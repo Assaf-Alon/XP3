@@ -93,11 +93,12 @@ def download_song(
 
     title = metadata.title if metadata else None
     ydl_opts = {
-        "format": "bestaudio/best",
+        "format": "bestaudio",
         "outtmpl": (
             join(out_path, f"{title}.%(ext)s") if title else join(out_path, "%(title)s.%(ext)s")
         ),  # %(title) is the video title, as described in https://github.com/ytdl-org/youtube-dl#output-template
         "quiet": True,
+        "noplaylist": True,
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
