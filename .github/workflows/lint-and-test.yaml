@@ -3,8 +3,13 @@ name: Lint and Test
 
 on: [pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   lint:
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -43,6 +48,8 @@ jobs:
       #     PYTHON_PYLINT_CONFIG_FILE: .pylintrc
       #     VALIDATE_PYTHON_ISORT: false
   test:
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

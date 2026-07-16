@@ -209,6 +209,8 @@ def _get_track_info_fallback(artist: str, title: str) -> List[ReleaseRecording]:
 
     data = _get_request(url)
 
+    if not data["artists"]:
+        return data
     artist_id = data["artists"][0]["id"]
     url = f"https://musicbrainz.org/ws/2/recording/?query=arid:{artist_id} AND recording:{title}&fmt=json"
 
@@ -240,7 +242,7 @@ def get_track_info(artist: str, title: str) -> List[ReleaseRecording]:
 
     # TODO - if env is dev / prod
     if IS_DEBUG:
-        if data.get("created"):
+        if data is not None and data.get("created"):
             del data["created"]
 
         save_response_as_json(data, artist, title)

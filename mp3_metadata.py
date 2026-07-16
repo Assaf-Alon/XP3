@@ -92,11 +92,19 @@ def get_title_suggestion(
 
     # Attempt to patch with channel name if possible
     elif channel:
-        channel = channel.replace(" - Topic", "").replace(" Official", "")
+        channel = channel.replace(" - Topic", "").replace(" official YouTube channel", "").replace(" Official YouTube Channel", "").replace(" YouTube Channel","").replace(" Official", "")
         if channel == "IPrevailBand":
             channel = "I Prevail"
         elif channel == "starsetonline":
             channel = "Starset"
+        elif channel == "ReoNa official YouTube channel":
+            channel = "ReoNa"
+        elif channel == "Aimer YouTube Channel":
+            channel = "Aimer"
+        elif channel == "EGOIST Official YouTube Channel":
+            channel = "EGOIST"
+        elif channel == "Ayase / YOASOBI":
+            channel = "YOASOBI"
         suggested_title = channel + " - " + suggested_title
 
     for s in STRINGS_TO_REMOVE:
